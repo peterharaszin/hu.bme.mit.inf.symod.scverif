@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RemoHeadless
+Bundle-SymbolicName: hu.bme.mit.remo.scverif.headless;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: hu.bme.mit.remo.scverif.headless.Activator
+Bundle-Vendor: Pete
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.core.resources;bundle-version="3.9.1",
+ hu.bme.mit.remo.scverif.processing,
+ org.eclipse.emf.common;bundle-version="2.10.1",
+ org.yakindu.sct.generator.core;bundle-version="2.3.1",
+ org.eclipse.xtext,
+ org.eclipse.debug.core,
+ org.eclipse.jdt.launching
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ActivationPolicy: lazy

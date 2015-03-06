@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: RemoHeadless
+Bundle-Name: Yakindu Statechart Analyzer - Headless Part
 Bundle-SymbolicName: hu.bme.mit.remo.scverif.headless;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: hu.bme.mit.remo.scverif.headless.Activator
-Bundle-Vendor: Pete
+Bundle-Vendor: BME-MIT
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources;bundle-version="3.9.1",
  hu.bme.mit.remo.scverif.processing,

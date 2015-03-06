@@ -49,20 +49,31 @@ public class SGenAnalyzerHandler extends AbstractHandler {
 		// checking
 		IFile file = (IFile) firstElement;
 		
-		System.out.println("Trying to generate code...");
-		GeneratorExecutor generatorExecutor = new GeneratorExecutor();
-		generatorExecutor.executeGenerator(file);
+		try {
+			System.out.println("Trying to generate code...");
+			
+			GeneratorExecutor generatorExecutor = new GeneratorExecutor();
+			generatorExecutor.executeGenerator(file);
+			
+//			// eredeti helyett a módosított leszármazott osztállyal:
+//			YakinduGeneratorExecutorModified generatorExecutorModified = new YakinduGeneratorExecutorModified();
+//			boolean executionSuccessful = generatorExecutorModified.executeGeneratorWithoutIProgressMonitor(file);
+//			
+//			if(executionSuccessful){
+//				System.out.println("Code generation was successful!");
+//			}
+//			else {
+//				System.out.println("Code generation has failed!");
+//			}
+			
+		} catch (Exception e) {
+			System.out.println("Code generation failed:");
+			e.printStackTrace();
+		} finally {
+			System.out.println("End of code generation.");
+		}
 		
-//		// eredeti helyett a módosított leszármazott osztállyal:
-//		YakinduGeneratorExecutorModified generatorExecutorModified = new YakinduGeneratorExecutorModified();
-//		boolean executionSuccessful = generatorExecutorModified.executeGeneratorWithoutIProgressMonitor(file);
-//		
-//		if(executionSuccessful){
-//			System.out.println("Code generation was successful!");
-//		}
-//		else {
-//			System.out.println("Code generation has failed!");
-//		}
+		
 		
 		MessageDialog.openInformation(shell, "Info (Pete)",
 				"(TEMP MESSAGE) Code has been generated!");

@@ -177,7 +177,7 @@
             <command
                   commandId="hu.bme.mit.remo.scverif.commands.sct.analyze"
                   disabledIcon="icons/Model_inactive_16x16.png"
-                  icon="icons/3D_objects_16x16_active.png"
+                  icon="icons/Model_active_16x16.png"
                   label="Analyze command"
                   mnemonic="M"
                   style="push"
@@ -247,18 +247,6 @@
             class="hu.bme.mit.remo.scverif.ui.handlers.StatechartProcessingHandler"
             commandId="hu.bme.mit.remo.scverif.commands.startprocessing">
       </handler>
-   </extension>
-   <extension
-         id="product"
-         point="org.eclipse.core.runtime.products">
-      <product
-            application="org.eclipse.e4.ui.workbench.swt.E4Application"
-            name="hu.bme.mit.remo.scverif.ui.productname">
-         <property
-               name="appName"
-               value="hu.bme.mit.remo.scverif.ui.productname">
-         </property>
-      </product>
    </extension>
 
 </plugin>

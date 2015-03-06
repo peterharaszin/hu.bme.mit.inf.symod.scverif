@@ -33,6 +33,7 @@ public class StatechartProcessingHandler extends AbstractHandler {
 	 *      ://stackoverflow.com/questions/11335491/how-to-programmatically-change
 	 *      -the-selection-within-package-explorer/20282030#20282030
 	 */
+	@SuppressWarnings("unused")
 	private IWorkbenchPart getActivePart() {
 		final IWorkbench workbench = PlatformUI.getWorkbench();
 		final IWorkbenchWindow activeWindow = workbench

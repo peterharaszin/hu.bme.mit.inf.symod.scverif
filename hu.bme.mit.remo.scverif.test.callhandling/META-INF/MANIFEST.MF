@@ -4,7 +4,4 @@ Bundle-Name: CallHandling
 Bundle-SymbolicName: hu.bme.mit.remo.scverif.test.callhandling
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: org.junit
-Export-Package: .,
- org.yakindu.scr,
- org.yakindu.scr.callhandling;uses:="org.yakindu.scr"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

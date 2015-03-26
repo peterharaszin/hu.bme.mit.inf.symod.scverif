@@ -3,7 +3,7 @@
  */
 package hu.bme.mit.remo.scverif.processing.sct;
 
-import java.util.Iterator;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.emf.common.util.EList;
@@ -76,48 +76,46 @@ public class StatechartAnalyzer {
 		temporaryStringBuilder.setLength(0);
 
 		String nameOfStatechart = statechart.getName();
-		EList<Region> regions = statechart.getRegions();
-		EList<Reaction> reactions = statechart.getReactions();
+				
 		String specification = statechart.getSpecification();
-		EList<Scope> scopes = statechart.getScopes();
 		temporaryStringBuilder.append("statechart.getName(): \n"
 				+ nameOfStatechart + "\n");
 		temporaryStringBuilder.append("statechart.getSpecification(): \n"
 				+ specification + "\n");
 		temporaryStringBuilder.append("iterating through '" + nameOfStatechart
 				+ "' statechart.getRegions():\n");
-		for (Iterator<Region> regionsIterator = regions.iterator(); regionsIterator
-				.hasNext();) {
-			Region region = (Region) regionsIterator.next();
+		
+		
+		EList<Region> regions = statechart.getRegions();		
+		for (Region region : regions) {
 			String regionName = region.getName();
 			temporaryStringBuilder.append("current region's name: '"
 					+ regionName + "'\n");
 			EList<Vertex> vertices = region.getVertices();
+			
 			temporaryStringBuilder
-					.append("iterating through region.getVertices() in: '"
-							+ regionName + "'\n");
-			for (Iterator<Vertex> verticesIterator = vertices.iterator(); verticesIterator
-					.hasNext();) {
-				Vertex vertex = (Vertex) verticesIterator.next();
+			.append("iterating through region.getVertices() in: '"
+					+ regionName + "'\n");
+			for (Vertex vertex : vertices) {
 				processState(vertex);
-			}
+			}			
 		}
+		
 		temporaryStringBuilder.append("iterating through '" + nameOfStatechart
 				+ "' statechart's reactions: \n");
-		for (Iterator<Reaction> reactionsIterator = reactions.iterator(); reactionsIterator
-				.hasNext();) {
-			Reaction reaction = (Reaction) reactionsIterator.next();
-			processReaction(reaction);
+		EList<Reaction> reactions = statechart.getReactions();
+		for (Reaction reaction : reactions) {
+			processReaction(reaction);			
 		}
-		EList<Reaction> localReactions = statechart.getLocalReactions();
+		
 		temporaryStringBuilder.append("iterating through '" + nameOfStatechart
 				+ "' statechart's local reactions: \n");
-		for (Iterator<Reaction> localReactionsIterator = localReactions
-				.iterator(); localReactionsIterator.hasNext();) {
-			Reaction reaction = (Reaction) localReactionsIterator.next();
+		EList<Reaction> localReactions = statechart.getLocalReactions();
+		for (Reaction reaction : localReactions) {
 			processReaction(reaction);
 		}
-
+		
+		EList<Scope> scopes = statechart.getScopes();
 		for (Scope scope : scopes) {
 			processScope(scope);
 		}
@@ -129,17 +127,16 @@ public class StatechartAnalyzer {
 
 	private void processReaction(Reaction reaction) {
 		System.out.println("Processing reaction...");
-		EList<ReactionProperty> reactionProperties = reaction.getProperties();
+		
+		temporaryStringBuilder.append("reaction's properties: \n");
+		EList<ReactionProperty> reactionProperties = reaction.getProperties();		
+		for (ReactionProperty reactionProperty : reactionProperties) {
+			processReactionProperty(reactionProperty);			
+		}
+		
 		Effect effect = reaction.getEffect();
 		Trigger trigger = reaction.getTrigger();
 
-		temporaryStringBuilder.append("reaction's properties: \n");
-		for (Iterator<ReactionProperty> reactionPropertiesIterator = reactionProperties
-				.iterator(); reactionPropertiesIterator.hasNext();) {
-			ReactionProperty reactionProperty = (ReactionProperty) reactionPropertiesIterator
-					.next();
-			processReactionProperty(reactionProperty);
-		}
 
 		processEffect(effect);
 		processTrigger(trigger);
@@ -183,21 +180,18 @@ public class StatechartAnalyzer {
 		temporaryStringBuilder.append("scope.eClass().getName(): \n"
 				+ scope.eClass().getName() + "\n");
 		EList<Variable> interfaceVariables = scope.getVariables();
-		for (Iterator<Variable> variableIterator = interfaceVariables
-				.iterator(); variableIterator.hasNext();) {
-			Variable variable = (Variable) variableIterator.next();
+		
+		for (Variable variable : interfaceVariables) {
 			processVariable(variable);
 		}
+		
 		EList<Event> interfaceEvents = scope.getEvents();
-		for (Iterator<Event> eventsIterator = interfaceEvents.iterator(); eventsIterator
-				.hasNext();) {
-			Event event = (Event) eventsIterator.next();
+		for (Event event : interfaceEvents) {
 			processEvent(event);
 		}
+	
 		EList<Declaration> interfaceDeclarations = scope.getDeclarations();
-		for (Iterator<Declaration> declarationIterator = interfaceDeclarations
-				.iterator(); declarationIterator.hasNext();) {
-			Declaration declaration = (Declaration) declarationIterator.next();
+		for (Declaration declaration : interfaceDeclarations) {
 			processDeclaration(declaration);
 		}
 	}
@@ -235,29 +229,25 @@ public class StatechartAnalyzer {
 		String vertexName = vertex.getName();
 		EList<Transition> vertexIncomingTransitions = vertex
 				.getIncomingTransitions();
+		
 		EList<Transition> vertexOutgoingTransitions = vertex
 				.getOutgoingTransitions();
+		
+		temporaryStringBuilder.append("\n<-- Outgoing transitions:\n");
+		for (Transition currentOutgoingTransition : vertexOutgoingTransitions) {
+			processTransition(currentOutgoingTransition);
+		}
+		
 		Region parentRegion = vertex.getParentRegion();
 		temporaryStringBuilder.append("»» current vertexName: '" + vertexName
 				+ "'" + (vertexName.length() == 0 ? " (entry state!)" : "")
 				+ "\n");
-
-		temporaryStringBuilder.append("\n<-- Outgoing transitions:\n");
-		for (Iterator<Transition> vertexOutgoingTransitionsIterator = vertexOutgoingTransitions
-				.iterator(); vertexOutgoingTransitionsIterator.hasNext();) {
-			Transition currentOutgoingTransition = (Transition) vertexOutgoingTransitionsIterator
-					.next();
-			processTransition(currentOutgoingTransition);
-		}
+		temporaryStringBuilder.append(parentRegion);
 
 		temporaryStringBuilder.append("\n--> Incoming transitions:\n");
-		for (Iterator<Transition> vertexIncomingTransitionsIterator = vertexIncomingTransitions
-				.iterator(); vertexIncomingTransitionsIterator.hasNext();) {
-			Transition currentIncomingTransition = (Transition) vertexIncomingTransitionsIterator
-					.next();
+		for (Transition currentIncomingTransition : vertexIncomingTransitions) {
 			processTransition(currentIncomingTransition);
 		}
-
 	}
 
 	public void processTransition(Transition transition) {
@@ -287,8 +277,8 @@ public class StatechartAnalyzer {
 		temporaryStringBuilder.setLength(0);
 	}
 
-	public boolean doesContainTimeEventReactionTrigger() {
-		TreeIterator<EObject> eAllContents = statechart.eAllContents();
+	public boolean doesContainTimeEventReactionTrigger() {		
+		TreeIterator<EObject> eAllContents = statechart.eAllContents();			
 		while (eAllContents.hasNext()) {
 			EObject nextEObject = eAllContents.next();
 			boolean isContainingTimeEvent = (nextEObject.getClass().getName() == "org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl");
@@ -299,8 +289,33 @@ public class StatechartAnalyzer {
 		return false;
 	}
 
-	public boolean interfaceSpecificationEqualsTo(String anotherSpecification) {
-		// ...
-		return false;
+	/**
+	 * Chcek whether the provided interface equals to the statechart's original interface
+	 * 
+	 * @param anotherSpecification
+	 * @return
+	 */
+	public boolean interfaceSpecificationEqualsTo(String anotherSpecification) {	
+		// using Pattern.split() may perform better than the StringTokenizer:
+		// http://stackoverflow.com/questions/691184/scanner-vs-stringtokenizer-vs-string-split/691224#691224
+		// "Using String.split() is convenient as you can tokenise and get the result in a single line. But it is sub-optimal in that it must recompile the regular expression each time. A possible gain is to compile the pattern once, then call Pattern.split():"
+		Pattern p = Pattern.compile("\\s+");
+		
+		String specification = statechart.getSpecification();
+		String[] originalSpecificationTokens = p.split(specification);
+		String[] anotherSpecificationTokens = p.split(anotherSpecification);
+		
+		if(originalSpecificationTokens.length != anotherSpecificationTokens.length){
+			System.err.println("The number of tokens don't match: original interface's tokens: "+originalSpecificationTokens.length+", the other interface's tokens: "+anotherSpecificationTokens.length);
+			return false;
+		}
+
+		for (int i = 0; i < anotherSpecificationTokens.length; i++) {
+			if(!originalSpecificationTokens[i].equals(anotherSpecificationTokens[i])){
+				System.err.println("The current token doesn't match: original token: "+originalSpecificationTokens[i]+", the other interface's current token: "+anotherSpecificationTokens[i]);
+				return false;
+			}
+		}
+		return true;
 	}
 }

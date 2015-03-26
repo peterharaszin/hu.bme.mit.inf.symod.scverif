@@ -34,7 +34,7 @@ public class SCTAnalyzeHandler extends AbstractHandler {
 		
 		if (selectedSctFile == null) {
 			MessageDialog
-					.openInformation(shell, "ReMo info",
+					.openError(shell, "ReMo info",
 							"Please select an SCT file!");
 			return null;
 		}
@@ -64,6 +64,26 @@ public class SCTAnalyzeHandler extends AbstractHandler {
 				StatechartAnalyzer stateChartAnalyzer = new StatechartAnalyzer(
 						statechart);
 				stateChartAnalyzer.processStatechart();
+				
+				String anotherSpecification = "/*************************\n" +
+						"   Interfaces of the chess clock\n" +
+						"   Do not modify!\n" +
+						" *************************/\n" +
+						"interface Buttons:\n" +
+						"in event button\n" +
+						"\n"+
+						"interface Display:\n" +
+						"var text:string = \"Initial text\"\n" +
+						"\n"+
+						" internal:\n" +
+						"/*************************\n" +
+						"   Insert additional variables here:\n" +
+						" *************************/\n" +
+						" \n" +
+						"// var myExampleInteger: integer\n" +
+						"// var myExampleText: string\n";
+				boolean interfaceSpecificationEquals = stateChartAnalyzer.interfaceSpecificationEqualsTo(anotherSpecification);
+				System.out.println("interfaceSpecificationEquals: "+interfaceSpecificationEquals);
 			}
 			// if (content instanceof
 			// org.eclipse.gmf.runtime.notation.impl.DiagramImpl) {
@@ -114,14 +134,15 @@ public class SCTAnalyzeHandler extends AbstractHandler {
 			if (firstElement != null
 					&& firstElement.getClass().getTypeName() == fileTypeClass) {
 				IFile file = (IFile) firstElement;
-				return (file.getFileExtension() != expectedFileExtension ? null
-						: file);
+				String fileExtension = file.getFileExtension();
+				return (expectedFileExtension.equals(fileExtension) ? file
+						: null);
 			} else {
 				return null;
 			}
 		}
 
-		// 2nd try (e.g. when clicking the icon on the toolbar
+		// 2nd try (e.g. when clicking the icon on the toolbar)
 		currentSelection = HandlerUtil.getCurrentSelection(event);
 		currentSelectionStructured = (IStructuredSelection) currentSelection;
 		if (currentSelectionStructured == null) {
@@ -133,8 +154,9 @@ public class SCTAnalyzeHandler extends AbstractHandler {
 		if (firstElement != null
 				&& firstElement.getClass().getTypeName() == fileTypeClass) {
 			IFile file = (IFile) firstElement;
-			return (file.getFileExtension() != expectedFileExtension ? null
-					: file);
+			String fileExtension = file.getFileExtension();			
+			return (expectedFileExtension.equals(fileExtension) ? file
+					: null);
 		} else {
 			return null;
 		}

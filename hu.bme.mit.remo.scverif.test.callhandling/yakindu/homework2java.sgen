@@ -4,7 +4,7 @@ GeneratorModel for yakindu::java {
 
 		feature Outlet {
 			targetProject = "hu.bme.mit.remo.scverif.test.callhandling"
-			targetFolder = "src-gen"
+			targetFolder = "yakindu"
 		}
 		
 		feature GeneralFeatures {

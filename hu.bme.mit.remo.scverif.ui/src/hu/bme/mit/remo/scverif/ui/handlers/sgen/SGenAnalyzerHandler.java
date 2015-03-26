@@ -1,5 +1,7 @@
 package hu.bme.mit.remo.scverif.ui.handlers.sgen;
 
+import hu.bme.mit.remo.scverif.processing.sgen.YakinduGeneratorExecutorModified;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -9,7 +11,6 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
-import org.yakindu.sct.generator.core.GeneratorExecutor;
 
 public class SGenAnalyzerHandler extends AbstractHandler {
 
@@ -52,31 +53,21 @@ public class SGenAnalyzerHandler extends AbstractHandler {
 		try {
 			System.out.println("Trying to generate code...");
 			
-			GeneratorExecutor generatorExecutor = new GeneratorExecutor();
-			generatorExecutor.executeGenerator(file);
+//			GeneratorExecutor generatorExecutor = new GeneratorExecutor();
+//			generatorExecutor.executeGenerator(file);
 			
 //			// eredeti helyett a módosított leszármazott osztállyal:
-//			YakinduGeneratorExecutorModified generatorExecutorModified = new YakinduGeneratorExecutorModified();
-//			boolean executionSuccessful = generatorExecutorModified.executeGeneratorWithoutIProgressMonitor(file);
-//			
-//			if(executionSuccessful){
-//				System.out.println("Code generation was successful!");
-//			}
-//			else {
-//				System.out.println("Code generation has failed!");
-//			}
-			
+			YakinduGeneratorExecutorModified generatorExecutorModified = new YakinduGeneratorExecutorModified();
+			boolean executionSuccessful = generatorExecutorModified.executeGeneratorWithoutIProgressMonitor(file);
+		
+			MessageDialog.openInformation(shell, "System Modeling - code generation is ready", "Code has been generated from the file at '"+file.getRawLocationURI()+"'! Result: "+executionSuccessful);
 		} catch (Exception e) {
 			System.out.println("Code generation failed:");
 			e.printStackTrace();
+			MessageDialog.openError(shell, "System Modeling - code generation failed", "An error occurred while trying to generate code from the file at '"+file.getRawLocationURI()+"': "+e.getMessage());
 		} finally {
 			System.out.println("End of code generation.");
 		}
-		
-		
-		
-		MessageDialog.openInformation(shell, "Info (Pete)",
-				"(TEMP MESSAGE) Code has been generated!");
 		
 		return null;
 	}	

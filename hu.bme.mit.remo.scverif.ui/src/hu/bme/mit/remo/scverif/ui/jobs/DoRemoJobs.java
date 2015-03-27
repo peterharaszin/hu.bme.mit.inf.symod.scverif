@@ -6,15 +6,17 @@ import hu.bme.mit.remo.scverif.ui.BuildError;
 import hu.bme.mit.remo.scverif.ui.YakinduSCTFileNotFoundException;
 import hu.bme.mit.remo.scverif.ui.YakinduSGenFileNotFoundException;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -416,7 +418,13 @@ public class DoRemoJobs {
         logger.info("Files.exists(CSV_targetFilePath): " + Files.exists(CSV_targetFilePath));        
         logger.info("projectsRootDirectoryPath.toUri(): " + projectsRootDirectoryPath.toUri());        
         
-        try (FileWriter csvWriter = new FileWriter(CSV_targetFilePath.toFile(), false)) {
+//        try (FileWriter csvWriter = new FileWriter(CSV_targetFilePath.toFile(), false)) {
+//        Charset cs = StandardCharsets.UTF_8;
+        String charsetNameForExcel = "windows-1250"; 
+        Charset charset = Charset.isSupported(charsetNameForExcel) ? Charset.forName(charsetNameForExcel) : StandardCharsets.UTF_8; 
+
+        try (BufferedWriter csvWriter = Files.newBufferedWriter(CSV_targetFilePath, charset)) {
+//        try (FileWriter csvWriter = new FileWriter(CSV_targetFilePath.toFile(), false)) {
             // Dátum;Neptun-kód;Exception dobódott;Teszthibák;Hibás
             // tesztesetek száma;Ignorált tesztesetek száma;Összes
             // teszteset száma;Összegzés(Siker/hiba)

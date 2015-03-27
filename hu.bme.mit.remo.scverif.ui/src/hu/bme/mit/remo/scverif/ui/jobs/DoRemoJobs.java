@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
@@ -103,31 +104,30 @@ public class DoRemoJobs {
     private static final String testCompiledClassFileFullPathInIProject = testCompiledClassFolderPathInIProject
             + testClassName + ".class";
 
-    // private FileHandler logFilehandler;
+    private FileHandler logFilehandler;
     //
     // private IProject remoProject;
-    // the key is the student's Neptun-code
-    private TreeMap<String, IProject> remoIProjects = new TreeMap<String, IProject>();
 
     private Shell parentActiveShell;
     private IWorkspaceRoot workspaceRoot;
     private IWorkspace workspace;
     // the root directory of the projects - we assume that ALL the to-be-checked
     // projects are in the same directory
-//    private static URI projectsRootDirectory;
-//    private static Path projectsRootDirectoryPath;
+    //    private static URI projectsRootDirectory;
+    //    private static Path projectsRootDirectoryPath;
     // CSV target path
-//    private static Path CSV_targetFilePath;    
+    //    private static Path CSV_targetFilePath;    
 
     // Delimiter used in CSV file
     private static final String CSV_COMMA_DELIMITER = ";";
     // new line separator
     private static final String NEW_LINE = "\n";
     private static final String CSV_targetFilenamePrefix = "TestResults";
-//    private static final String CSV_targetFilename;
+    //    private static final String CSV_targetFilename;
     private static final String dateFormatPattern = "yyyy-MM-dd HH-mm-ss";
     private static final SimpleDateFormat csvSimpleDateFormatForColumn = new SimpleDateFormat(dateFormatPattern);
-    private static final SimpleDateFormat csvSimpleDateFormatForFilename = new SimpleDateFormat(dateFormatPattern.replace(' ', '_'));
+    private static final SimpleDateFormat csvSimpleDateFormatForFilename = new SimpleDateFormat(
+            dateFormatPattern.replace(' ', '_'));
 
     private static final Logger logger = Logger.getLogger("RemoLog");
     private static DoRemoJobs.MyConsoleHandler myConsoleHandler = new MyConsoleHandler();
@@ -140,13 +140,10 @@ public class DoRemoJobs {
     }
 
     /**
-     * We don't want ALL the logging stuffs to be printed out red (e.g. in
-     * Eclipse) - for example, the texts printed out with logger.info("...")
-     * should remain black.
+     * We don't want ALL the logging stuffs to be printed out red (e.g. in Eclipse) 
+     * - for example, the texts printed out with logger.info("...") should remain black.
      * 
-     * @see http
-     *      ://stackoverflow.com/questions/9794516/change-appengine-console-red
-     *      -color-in-eclipse/16229664#16229664
+     * @see http://stackoverflow.com/questions/9794516/change-appengine-console-red-color-in-eclipse/16229664#16229664
      * @author Pete
      */
     public static class MyConsoleHandler extends java.util.logging.StreamHandler {
@@ -173,20 +170,9 @@ public class DoRemoJobs {
 
         workspace = ResourcesPlugin.getWorkspace();
         workspaceRoot = workspace.getRoot();
-
-        remoIProjects = getMatchingProjects(Arrays.asList(workspaceRoot.getProjects()));
-
-        if (remoIProjects.isEmpty()) {
-            throw new Exception("No projects could be found in the workspace at '" + workspaceRoot.getLocationURI()
-                    + "'!");
-        }
-
-        // // get the first entry
-        // Entry<String, IProject> firstEntry =
-        // remoIProjects.entrySet().iterator().next();
     }
-    
-    public Path getProjectRootDirectoryFromIProject(IProject iProject){
+
+    public Path getProjectRootDirectoryFromIProject(IProject iProject) {
         // going up one directory
         URI projectRawLocationURI = iProject.getRawLocationURI();
         // don't know why yet, but ".." goes up TWO directories
@@ -194,64 +180,62 @@ public class DoRemoJobs {
         logger.info("projectRootDirectoryURI: " + projectsRootDirectoryURI);
         return Paths.get(projectsRootDirectoryURI);
     }
-    
+
     /**
      * Get the first IProject that matches the regular expression (for example for determining the root directory for all the other projects (we assume that the projects to process are in the same directory)) 
      * 
      * @return
      */
-    public IProject getFirstMatchingProjectInWorkspace(){
+    public IProject getFirstMatchingProjectInWorkspace() {
         IWorkspaceRoot iWorkspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-         IProject[] iProjects = iWorkspaceRoot.getProjects();
-         Matcher matcher = null;
-                  
-         for (IProject iProject : iProjects) {
-             String projectName = iProject.getName();
-             matcher = patternCompiled.matcher(projectName);
-             logger.info("projectName: '" + projectName + "'");
-             if (matcher.find()) {
-//                 String neptunCode = matcher.group(1);
-                 return iProject;
-             }
-         }
-         return null;
+        IProject[] iProjects = iWorkspaceRoot.getProjects();
+        Matcher matcher = null;
+
+        for (IProject iProject : iProjects) {
+            String projectName = iProject.getName();
+            matcher = patternCompiled.matcher(projectName);
+            logger.info("projectName: '" + projectName + "'");
+            if (matcher.find()) {
+                //                 String neptunCode = matcher.group(1);
+                return iProject;
+            }
+        }
+        return null;
     }
 
-    public static TreeMap<String, IProject> getMatchingProjectsInWorkspace(){
+    public static TreeMap<String, IProject> getMatchingProjectsInWorkspace() {
         return getMatchingProjects(Arrays.asList(ResourcesPlugin.getWorkspace().getRoot().getProjects()));
     }
-    
+
     /**
      * Get projects matching the regular expression.
      * 
      * @param projects An array of IProject objects.
      * @return A TreeMap of Neptun-code - IProject pairs.
      */
-    public static TreeMap<String, IProject> getMatchingProjects(List<IProject> projects){
-//    public static TreeMap<String, IProject> getMatchingProjects(IProject[] projects){
-
+    public static TreeMap<String, IProject> getMatchingProjects(List<IProject> projects) {
         TreeMap<String, IProject> matchingIProjects = new TreeMap<String, IProject>();
-        
+
         Matcher matcher = null;
-        
+
         for (IProject iProject : projects) {
             String projectName = iProject.getName();
             matcher = patternCompiled.matcher(projectName);
             logger.info("projectName: '" + projectName + "'");
             if (matcher.find()) {
                 String neptunCode = matcher.group(1);
-//                if(DoRemoJobs.hasRequiredProjectNatures(iProject)){
+                //                if(DoRemoJobs.hasRequiredProjectNatures(iProject)){
                 matchingIProjects.put(neptunCode, iProject);
-//                }
+                //                }
             } else {
                 logger.info("Ignoring project called '" + projectName + "' at '" + iProject.getRawLocationURI()
                         + "', because it does not match the following regular expression: " + projectRegex);
             }
-        }     
-        
+        }
+
         return matchingIProjects;
     }
-    
+
     public boolean sGenFileExistsInIProject(IProject project) {
         return project.getFile(sgenFilePathInBundle).exists();
     }
@@ -269,7 +253,8 @@ public class DoRemoJobs {
         logger.info("OK, the sgen file exists in '" + project.getName() + "'.");
     }
 
-    public void checkExistenceOfSCTFileInRootDirectory(Path projectsRootDirectoryPath, String sctFileName) throws YakinduSCTFileNotFoundException {
+    public void checkExistenceOfSCTFileInRootDirectory(Path projectsRootDirectoryPath, String sctFileName)
+            throws YakinduSCTFileNotFoundException {
         Path sctFilePathInRootDirectory = projectsRootDirectoryPath.resolve(sctFileName);
 
         logger.info("Checking if '" + sctFileName + "' exists in '" + sctFilePathInRootDirectory.toUri() + "'...");
@@ -344,18 +329,31 @@ public class DoRemoJobs {
         return project;
     }
 
-    /*
-     * private void setLogger() throws SecurityException, IOException { // get
-     * current working directory () String currentWorkingDirectory =
-     * java.nio.file.Paths.get(".") .toAbsolutePath().normalize().toString(); //
-     * configuring the logger with the handler and formatter logFilehandler =
-     * new FileHandler(currentWorkingDirectory + "/RemoLogFile.log");
-     * logger.addHandler(logFilehandler); SimpleFormatter formatter = new
-     * SimpleFormatter(); logFilehandler.setFormatter(formatter); }
-     */
+    @SuppressWarnings("unused")
+    private void setLogger() throws SecurityException, IOException {
+        // get current working directory
+        String currentWorkingDirectory = java.nio.file.Paths.get(".").toAbsolutePath().normalize().toString();
+        // configuring the logger with the handler and formatter 
+        logFilehandler = new FileHandler(currentWorkingDirectory + "/RemoLogFile.log");
+        logger.addHandler(logFilehandler);
+        SimpleFormatter formatter = new SimpleFormatter();
+        logFilehandler.setFormatter(formatter);
+    }
 
-    public org.junit.runner.Result runTestsOnProject(Path projectsRootDirectoryPath, String neptunCode, IProject currentIProject) throws Exception {
-        
+    /**
+     * Run all the tests on a given project.
+     * 
+     * TODO: fix waiting for full build, enabling cleaning request again, making it work even without automatic build ticked...
+     * 
+     * @param projectsRootDirectoryPath
+     * @param neptunCode
+     * @param currentIProject
+     * @return
+     * @throws Exception
+     */
+    public org.junit.runner.Result runTestsOnProject(Path projectsRootDirectoryPath, String neptunCode,
+            IProject currentIProject) throws Exception {
+
         org.eclipse.core.runtime.NullProgressMonitor nullProgressMonitor = new org.eclipse.core.runtime.NullProgressMonitor();
 
         logger.info("Neptun: " + neptunCode + "; project name: " + currentIProject.getName() + ", location URI: "
@@ -402,29 +400,41 @@ public class DoRemoJobs {
 
     }
 
-    public void runTestsOnProjects(TreeMap<String, IProject> remoIProjects) {        
+    /**
+     * Run all the tests on the projects passed as a parameter (the key in the TreeMap is the student's Neptun-code)
+     * 
+     * @param remoIProjects
+     * @throws Exception
+     */
+    public void runTestsOnProjects(TreeMap<String, IProject> remoIProjects) throws Exception {
         logger.info("Executing statechart analyzation job (ReMo)...");
 
+        if (remoIProjects.isEmpty()) {
+            throw new Exception("No projects could be found in the workspace at '" + workspaceRoot.getLocationURI()
+                    + "'!");
+        }        
+        
         final IProject firstProject = (remoIProjects.firstEntry()).getValue();
-        final Path projectsRootDirectoryPath = getProjectRootDirectoryFromIProject(firstProject); 
-        
+        final Path projectsRootDirectoryPath = getProjectRootDirectoryFromIProject(firstProject);
+
         final Set<Entry<String, IProject>> iProjectsEntrySet = remoIProjects.entrySet();
-        
+
         // filename containing the actual date
-        final String CSV_targetFilename = CSV_targetFilenamePrefix+"." + csvSimpleDateFormatForFilename.format(new Date()) + ".csv";        
-        
+        final String CSV_targetFilename = CSV_targetFilenamePrefix + "."
+                + csvSimpleDateFormatForFilename.format(new Date()) + ".csv";
+
         final Path CSV_targetFilePath = projectsRootDirectoryPath.resolve(CSV_targetFilename);
         logger.info("CSV_targetFilePath.toUri(): " + CSV_targetFilePath.toUri());
-        logger.info("Files.exists(CSV_targetFilePath): " + Files.exists(CSV_targetFilePath));        
-        logger.info("projectsRootDirectoryPath.toUri(): " + projectsRootDirectoryPath.toUri());        
-        
-//        try (FileWriter csvWriter = new FileWriter(CSV_targetFilePath.toFile(), false)) {
-//        Charset cs = StandardCharsets.UTF_8;
-        String charsetNameForExcel = "windows-1250"; 
-        Charset charset = Charset.isSupported(charsetNameForExcel) ? Charset.forName(charsetNameForExcel) : StandardCharsets.UTF_8; 
+        logger.info("Files.exists(CSV_targetFilePath): " + Files.exists(CSV_targetFilePath));
+        logger.info("projectsRootDirectoryPath.toUri(): " + projectsRootDirectoryPath.toUri());
+
+        String charsetNameForExcel = "windows-1250"; // see http://docs.oracle.com/javase/8/docs/technotes/guides/intl/encoding.doc.html
+        // or here's another approach (writing to a file with the character encoding 'UTF-8 with BOM' (not without)): http://stackoverflow.com/questions/4192186/setting-a-utf-8-in-java-and-csv-file/4192897#4192897
+        Charset charset = Charset.isSupported(charsetNameForExcel) ? Charset.forName(charsetNameForExcel)
+                : StandardCharsets.UTF_8;
 
         try (BufferedWriter csvWriter = Files.newBufferedWriter(CSV_targetFilePath, charset)) {
-//        try (FileWriter csvWriter = new FileWriter(CSV_targetFilePath.toFile(), false)) {
+            //        try (FileWriter csvWriter = new FileWriter(CSV_targetFilePath.toFile(), false)) {
             // Dátum;Neptun-kód;Exception dobódott;Teszthibák;Hibás
             // tesztesetek száma;Ignorált tesztesetek száma;Összes
             // teszteset száma;Összegzés(Siker/hiba)
@@ -444,11 +454,11 @@ public class DoRemoJobs {
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Összegzés (siker/hiba)");
             csvWriter.append(NEW_LINE);
-                       
-            for (Entry<String, IProject> currentEntry : iProjectsEntrySet) {                
+
+            for (Entry<String, IProject> currentEntry : iProjectsEntrySet) {
                 String neptunCode = currentEntry.getKey();
                 IProject currentIProject = currentEntry.getValue();
-                
+
                 boolean wasSuccessful = false;
                 // the number of tests that failed during the run
                 int failureCount = 0;
@@ -1040,7 +1050,7 @@ public class DoRemoJobs {
         logger.info("OK, the project building process has finished!");
         return true;
     }
-    
+
     /**
      * Check if all the required natures are enabled on the project
      * 
@@ -1048,23 +1058,22 @@ public class DoRemoJobs {
      * @return
      * @throws CoreException
      */
-    public static boolean hasRequiredProjectNatures(IProject project) throws CoreException{
-        String[] requiredNatures = {
-                org.eclipse.jdt.core.JavaCore.NATURE_ID, // Java nature
+    public static boolean hasRequiredProjectNatures(IProject project) throws CoreException {
+        String[] requiredNatures = { org.eclipse.jdt.core.JavaCore.NATURE_ID, // Java nature
                 org.yakindu.sct.builder.nature.SCTNature.NATURE_ID // Yakindu nature
         };
         // projects with the Java nature
-//         boolean hasJavaNature = project.hasNature(org.eclipse.jdt.core.JavaCore.NATURE_ID);
-//         boolean isJavaNatureEnabled = project.isNatureEnabled(org.eclipse.jdt.core.JavaCore.NATURE_ID); // http://help.eclipse.org/juno/index.jsp?topic=%2Forg.eclipse.jdt.doc.isv%2Freference%2Fapi%2Forg%2Feclipse%2Fjdt%2Fcore%2FJavaCore.html&anchor=NATURE_ID
+        //         boolean hasJavaNature = project.hasNature(org.eclipse.jdt.core.JavaCore.NATURE_ID);
+        //         boolean isJavaNatureEnabled = project.isNatureEnabled(org.eclipse.jdt.core.JavaCore.NATURE_ID); // http://help.eclipse.org/juno/index.jsp?topic=%2Forg.eclipse.jdt.doc.isv%2Freference%2Fapi%2Forg%2Feclipse%2Fjdt%2Fcore%2FJavaCore.html&anchor=NATURE_ID
 
         for (String natureId : requiredNatures) {
-            if(!project.isNatureEnabled(natureId)){
-                logger.warning("The project nature called '"+natureId+"' is not enabled!");
+            if (!project.isNatureEnabled(natureId)) {
+                logger.warning("The project nature called '" + natureId + "' is not enabled!");
                 return false;
             }
         }
-        
-        return true;  
+
+        return true;
     }
 
     public static void listFilesInDirectory(Path path) throws IOException {

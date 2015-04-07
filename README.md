@@ -2,3 +2,4 @@ Yakindu-modellek automatizált ellenőrzése a Rendszermodellezés c. tárgy há
 =======================
 
 * https://inf.mit.bme.hu/edu/courses/remo
+* https://inf.mit.bme.hu/edu/courses/remo-de

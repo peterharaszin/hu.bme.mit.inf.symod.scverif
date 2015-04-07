@@ -76,28 +76,25 @@ import org.yakindu.sct.model.sgen.GeneratorModel;
 import org.yakindu.sct.model.sgraph.Statechart;
 
 /**
- * 1. sct-fájl átmásolása X helyről 2. sct-fájl bejárása 3. kód legenerálása az
- * sct-fájl+sgen-fájl segítségével 4. buildelés
+ * 1. sct-fájl átmásolása X helyről
+ * 2. sct-fájl bejárása
+ * 3. kód legenerálása az sct-fájl+sgen-fájl segítségével
+ * 4. buildelés
  * 
  * @author Pete
  */
 public class DoRemoJobs {
-    private static final String SCT_FILE_EXTENSION = "sct";
-    private static final String SGEN_FILE_EXTENSION = "sgen";
+    public static final String SCT_FILE_EXTENSION = "sct";
+    public static final String SGEN_FILE_EXTENSION = "sgen";
     public static final String yakindu_BUILDER_ID = "org.yakindu.sct.builder.SCTBuilder";
 
-    // private static final String myBundleName =
-    // "hu.bme.mit.remo.scverif.test.callhandling";
-    // private static final String myBundleName =
-    // "hu.peterharaszin.quicktest.java";
+    // the relative path of the sgen file in the IProject
     private static final String sgenFilePathInBundle = "yakindu/homework2java." + SGEN_FILE_EXTENSION;
-    // private static final String sctFilePathInBundle = "CallHandling.sct";
-    // private static final String testCompiledFilePathInIProject =
-    // "src/MyTest.java";
-
+    // the package name that contains the test file in every homework projects
     private static final String packageNameContainingTestCases = "hu.bme.mit.inf.symod.homework.generic.tests";
-    private static final String testFullClassNameWithPackage = packageNameContainingTestCases + ".TestCases";
     private static final String testClassName = "TestCases";
+    // the full class name of the test file (containing the package name) for dynamic class loading
+    private static final String testFullClassNameWithPackage = packageNameContainingTestCases + "." + testClassName;
 
     private static final String testCompiledClassFolderPathInIProject = "bin/"
             + packageNameContainingTestCases.replace(".", "/") + "/";
@@ -129,7 +126,7 @@ public class DoRemoJobs {
     private static final SimpleDateFormat csvSimpleDateFormatForFilename = new SimpleDateFormat(
             dateFormatPattern.replace(' ', '_'));
 
-    private static final Logger logger = Logger.getLogger("RemoLog");
+    public static final Logger logger = Logger.getLogger("RemoLog");
     private static DoRemoJobs.MyConsoleHandler myConsoleHandler = new MyConsoleHandler();
     private static final String projectRegex = "hu\\.bme\\.mit\\.inf\\.symod\\.(\\w{6})\\.homework";;
     private static final Pattern patternCompiled = Pattern.compile(projectRegex, Pattern.CASE_INSENSITIVE);
@@ -370,9 +367,9 @@ public class DoRemoJobs {
 
         checkExistenceOfSGenFileInIProject(currentIProject);
 
-        // deleteYakinduTargetFolderContents(currentIProject);
+//        deleteYakinduTargetFolderContents(currentIProject);
 
-        // cleanProject(currentIProject, nullProgressMonitor);
+        cleanProject(currentIProject, nullProgressMonitor);
 
         copySctFile(projectsRootDirectoryPath, neptunCode, currentIProject);
 
@@ -407,12 +404,22 @@ public class DoRemoJobs {
      * @throws Exception
      */
     public void runTestsOnProjects(TreeMap<String, IProject> remoIProjects) throws Exception {
+        runTestsOnProjects(remoIProjects, new NullProgressMonitor());
+    }
+    
+    /**
+     * Run all the tests on the projects passed as a parameter (the key in the TreeMap is the student's Neptun-code)
+     * 
+     * @param remoIProjects
+     * @throws Exception
+     */
+    public void runTestsOnProjects(TreeMap<String, IProject> remoIProjects, IProgressMonitor monitor) throws Exception {
         logger.info("Executing statechart analyzation job (ReMo)...");
 
         if (remoIProjects.isEmpty()) {
             throw new Exception("No projects could be found in the workspace at '" + workspaceRoot.getLocationURI()
                     + "'!");
-        }        
+        }
         
         final IProject firstProject = (remoIProjects.firstEntry()).getValue();
         final Path projectsRootDirectoryPath = getProjectRootDirectoryFromIProject(firstProject);
@@ -434,10 +441,10 @@ public class DoRemoJobs {
                 : StandardCharsets.UTF_8;
 
         try (BufferedWriter csvWriter = Files.newBufferedWriter(CSV_targetFilePath, charset)) {
+            monitor.beginTask("Starting to process projects...", iProjectsEntrySet.size());
+           
             //        try (FileWriter csvWriter = new FileWriter(CSV_targetFilePath.toFile(), false)) {
-            // Dátum;Neptun-kód;Exception dobódott;Teszthibák;Hibás
-            // tesztesetek száma;Ignorált tesztesetek száma;Összes
-            // teszteset száma;Összegzés(Siker/hiba)
+            // Dátum;Neptun-kód;Exception dobódott;Teszthibák;Hibás tesztesetek száma;Ignorált tesztesetek száma;Összes teszteset száma;Összegzés(Siker/hiba)
             csvWriter.append("Dátum");
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Neptun-kód");
@@ -459,6 +466,13 @@ public class DoRemoJobs {
                 String neptunCode = currentEntry.getKey();
                 IProject currentIProject = currentEntry.getValue();
 
+                // see if cancellation has been requested
+                if (monitor.isCanceled()) {
+                    throw new OperationCanceledException();
+                    // return Status.CANCEL_STATUS;
+                }
+//                monitor.subTask("Clean+build...");               
+                
                 boolean wasSuccessful = false;
                 // the number of tests that failed during the run
                 int failureCount = 0;
@@ -470,71 +484,11 @@ public class DoRemoJobs {
                 Result testStatechartResult = null;
 
                 try {
-
-                    // org.eclipse.core.runtime.NullProgressMonitor
-                    // nullProgressMonitor = new
-                    // org.eclipse.core.runtime.NullProgressMonitor();
-                    //
-                    // logger.info("Neptun: " + neptunCode + "; project name: "
-                    // + currentIProject.getName()
-                    // + ", location URI: " +
-                    // currentIProject.getRawLocationURI());
-                    //
-                    // String sctFileNameInRootDirectory = neptunCode + "." +
-                    // SCT_FILE_EXTENSION;
-                    //
-                    // checkExistenceOfSCTFileInRootDirectory(sctFileNameInRootDirectory);
-                    //
-                    // currentIProject.open(nullProgressMonitor);
-                    // // refreshing in case e.g. an sgen file has been added
-                    // since
-                    // // the last build (so this way the new files get
-                    // "recorded"
-                    // // in the workspace)
-                    // currentIProject.refreshLocal(IResource.DEPTH_INFINITE,
-                    // nullProgressMonitor);
-                    //
-                    // checkExistenceOfSGenFileInIProject(currentIProject);
-                    //
-                    // // deleteYakinduTargetFolderContents(currentIProject);
-                    //
-                    // // cleanProject(currentIProject, nullProgressMonitor);
-                    //
-                    // copySctFile(neptunCode, currentIProject);
-                    //
-                    // // logger.info("CLEAN - bin content AFTER");
-                    // // listFilesInDirectory(binPath);
-                    //
-                    // buildProject(currentIProject, nullProgressMonitor);
-                    //
-                    // int maxProblemSeverity =
-                    // currentIProject.findMaxProblemSeverity(IMarker.PROBLEM,
-                    // true,
-                    // IResource.DEPTH_INFINITE);
-                    // if (maxProblemSeverity == IMarker.SEVERITY_ERROR) {
-                    // throw new
-                    // BuildError("A build error occurred in the project called '"
-                    // + currentIProject.getName() + "' at '" +
-                    // currentIProject.getRawLocationURI() + "'!");
-                    // }
-                    //
-                    // // logger.info("BUILD - bin content AFTER");
-                    // // listFilesInDirectory(binPath);
-                    //
-                    // analyzeSctFile(currentIProject);
-                    //
-                    // // logger.info("TESTING - bin content BEFORE");
-                    // // listFilesInDirectory(binPath);
-                    //
-                    // testStatechartResult = testStatechart(currentIProject);
-
                     testStatechartResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode, currentIProject);
-
                 } catch (final Exception e) {
                     System.err.println("Problems occurred while trying to process the project called '"
                             + currentIProject.getName() + "' at '" + currentIProject.getRawLocationURI()
                             + "'. Message: " + e.getMessage());
-                    e.printStackTrace();
                     testException = e;
 
                     // if (parentActiveShell != null) {
@@ -547,7 +501,8 @@ public class DoRemoJobs {
                     // });
                     // }
                 } finally {
-                    // monitor.done();
+                    monitor.worked(1);
+
                     logger.info("End of statechart analyzation.");
                     String dateFormatColumn = csvSimpleDateFormatForColumn.format(new Date());
 
@@ -559,8 +514,23 @@ public class DoRemoJobs {
                     csvWriter.append(neptunCode);
                     csvWriter.append(CSV_COMMA_DELIMITER);
 
-                    String exceptionText = (testException == null ? "-" : testException.getMessage()
-                            .replace(NEW_LINE, " == ").replace("\r", " == "));
+                    String exceptionText = "";
+
+                    if (testException == null) {
+                        exceptionText = "-";
+                    } else {
+                        if (testException instanceof YakinduSCTFileNotFoundException) {
+                            exceptionText = "No SCT file has been found!";
+                        } else if (testException instanceof YakinduSGenFileNotFoundException) {
+                            exceptionText = "No SGEN file has been found!";
+                        } else {
+                            testException.printStackTrace();
+                        }
+
+                        exceptionText += (testException == null ? "-" : testException.getMessage()
+                                .replace(NEW_LINE, " == ").replace("\\r", " == "));
+                    }
+
                     csvWriter.append(exceptionText);
                     csvWriter.append(CSV_COMMA_DELIMITER);
 
@@ -571,8 +541,8 @@ public class DoRemoJobs {
                         for (Failure failure : testStatechartResult.getFailures()) {
                             testFailureMessages += failure.getMessage();
                         }
-                        testFailureText = (testFailureMessages.length() > 0 ? testFailureMessages.replace("\n", " == ")
-                                .replace("\r", " == ") : "-");
+                        testFailureText = (testFailureMessages.length() > 0 ? testFailureMessages.replace(NEW_LINE,
+                                " == ").replace("\\r", " == ") : "-");
 
                         // true if all tests succeeded
                         wasSuccessful = testStatechartResult.wasSuccessful();
@@ -609,6 +579,8 @@ public class DoRemoJobs {
             System.err.println("A problem occurred while trying to write to the CSV file at '"
                     + CSV_targetFilePath.toUri() + "'");
             ioex.printStackTrace();
+        } finally {
+            monitor.done();            
         }
 
         logger.info("(System Modeling) End of processing.");
@@ -846,6 +818,18 @@ public class DoRemoJobs {
     }
 
     /**
+     * Indicates a clean request for ALL the projects in the current workspace.
+     * 
+     * @return
+     * @throws CoreException
+     */
+    public boolean cleanAllProjectsInWorkspace(IProgressMonitor monitor) throws CoreException {
+        logger.info("Indicating a clean request for ALL the projects in the workspace...");
+        ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.CLEAN_BUILD, monitor);
+        return true;
+    }
+
+    /**
      * @see http
      *      ://help.eclipse.org/luna/index.jsp?topic=%2Forg.eclipse.platform.
      *      doc.
@@ -860,6 +844,28 @@ public class DoRemoJobs {
         cleanProject(project, monitor);
         buildProject(project, monitor);
 
+        return true;
+    }
+
+    /**
+     * Indicates a clean request and then a full build request for ALL the projects in the current workspace.
+     * 
+     * @return
+     * @throws CoreException
+     */
+    public boolean cleanAndFullBuildAllProjectsInWorkspace(IProgressMonitor monitor) throws CoreException {
+        logger.info("Indicating a clean request for ALL the projects in the workspace AND indicating a Full build request...");
+        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+        logger.info("Cleaning ALL projects...");
+        workspace.build(IncrementalProjectBuilder.CLEAN_BUILD, monitor);
+        logger.info("Cleaning ALL projects DONE!");
+        logger.info("FULL building all projects...");
+        workspace.build(IncrementalProjectBuilder.FULL_BUILD, monitor);
+        logger.info("FULL building all projects DONE!");
+        logger.info("Cleaning ALL projects DONE!");
+        logger.info("AUTO building all projects...");
+        workspace.build(IncrementalProjectBuilder.AUTO_BUILD, monitor);
+        logger.info("AUTO building all projects DONE!");
         return true;
     }
 
@@ -1017,10 +1023,11 @@ public class DoRemoJobs {
             public void done(IJobChangeEvent event) {
                 Job job = event.getJob();
                 String jobName = job.getName();
-                boolean isExecuteSCTGenmodelJob = jobName.startsWith("Execute SCT Genmodel ");
+                String yakinduJobPrefix = "Execute SCT Genmodel ";
+                boolean isExecuteSCTGenmodelJob = jobName.startsWith(yakinduJobPrefix);
                 // logger.info(Boolean.toString(isExecuteSCTGenmodelJob));
                 if (isExecuteSCTGenmodelJob) {
-                    // logger.info("jobName: " + jobName);
+                    // logger.info("The job called '" + jobName+"' has finished! Removing JobChangeListener...");
                     // org.eclipse.core.runtime.jobs.ISchedulingRule
                     // schedulingRule = job.getRule();
                     // logger.info("schedulingRule: " + schedulingRule);
@@ -1037,6 +1044,9 @@ public class DoRemoJobs {
                 e = null;
             } catch (InterruptedException ex) {
                 e = ex;
+
+                // TODO: temp...
+                logger.info("building projects... InterruptedException: " + ex.toString());
             }
         } while (e != null);
 
@@ -1108,23 +1118,58 @@ public class DoRemoJobs {
         } while (wasInterrupted);
     }
 
+    public void waitForBuildWithJobChangeAdapter() {
+        logger.info("Waiting for full build with JobChangeAdapter...");
+
+        Job.getJobManager().addJobChangeListener(new JobChangeAdapter() {
+            @Override
+            public void done(IJobChangeEvent event) {
+                Job job = event.getJob();
+                String jobName = job.getName();
+                String yakinduJobPrefix = "Execute SCT Genmodel ";
+                boolean isExecuteSCTGenmodelJob = jobName.startsWith(yakinduJobPrefix);
+                // logger.info(Boolean.toString(isExecuteSCTGenmodelJob));
+                if (isExecuteSCTGenmodelJob) {
+                    // logger.info("The job called '" + jobName+"' has finished! Removing JobChangeListener...");
+                    // org.eclipse.core.runtime.jobs.ISchedulingRule
+                    // schedulingRule = job.getRule();
+                    // logger.info("schedulingRule: " + schedulingRule);
+                    job.removeJobChangeListener(this);
+                } else {
+                    logger.info("The job called '" + jobName + "' has finished!");
+                }
+            }
+        });
+
+        logger.info("After JobChangeAdapter...");
+    }
+
     /**
      * @see https
      *      ://github.com/ckulla/org.junit.contrib.eclipse/blob/master/ui/src
      *      /org/junit/contrib/eclipse/ui/WorkspaceUtil.java
      */
-    public void waitForAutoBuild() {
+    public void waitForAutoAndManualBuild() {
+        logger.info("Waiting for autobuild (waitForAutoBuild())...");
+
         boolean wasInterrupted = false;
         do {
             try {
                 Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
+                Job.getJobManager().join(ResourcesPlugin.FAMILY_MANUAL_BUILD, null);
                 wasInterrupted = false;
             } catch (OperationCanceledException e) {
+                logger.info("waitForAutoBuild() -- OperationCanceledException: " + e.toString());
+
                 e.printStackTrace();
             } catch (InterruptedException e) {
+                logger.info("waitForAutoBuild() -- InterruptedException: " + e.toString());
+
                 wasInterrupted = true;
             }
         } while (wasInterrupted);
+
+        logger.info("Waiting for autobuild (waitForAutoBuild()) DONE...");
     }
 
     /**
@@ -1134,10 +1179,14 @@ public class DoRemoJobs {
      * @return
      */
     public static boolean buildAndWaitForEnd() {
+        boolean temp = true;
+
         IWorkbench workbench = PlatformUI.getWorkbench();
         IProgressService progressService = workbench.getProgressService();
         final IRunnableWithProgress runnable = new IRunnableWithProgress() {
             public void run(IProgressMonitor monitor) throws InvocationTargetException {
+                logger.info("===== Starting build process and waiting for the end =====");
+
                 IJobManager jobManager = Job.getJobManager();
                 // IWorkbench workbench = PlatformUI.getWorkbench();
                 try {
@@ -1153,6 +1202,9 @@ public class DoRemoJobs {
                         jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
                     } catch (InterruptedException e) {
                         // continue
+
+                        if (temp)
+                            logger.info("BUILD PROCESS - InterruptedException: " + e.toString());
                     }
                 }
             }
@@ -1161,8 +1213,11 @@ public class DoRemoJobs {
         try {
             progressService.busyCursorWhile(runnable);
             return true;
-        } catch (InvocationTargetException | InterruptedException e1) {
-            e1.printStackTrace();
+        } catch (InvocationTargetException | InterruptedException e) {
+            e.printStackTrace();
+
+            if (temp)
+                logger.info("BUILD PROCESS - InterruptedException (progressService.busyCursorWhile): " + e.toString());
         }
 
         return false;
@@ -1414,7 +1469,7 @@ public class DoRemoJobs {
         // }
 
         // org.junit.runner.JUnitCore junit1 = new org.junit.runner.JUnitCore();
-        // org.junit.runner.Result result1 = junit1.run(SCTTest.class);
+        // org.junit.runner.Result result1 = junit1.run(SctTest.class);
 
         // TreeIterator<EObject> eAllContents =
         // statechart.eAllContents();
@@ -1425,9 +1480,9 @@ public class DoRemoJobs {
         // .
         // http://stackoverflow.com/questions/2543912/how-do-i-run-junit-tests-from-inside-my-java-application/2562575#2562575
         // org.junit.runner.JUnitCore junit = new org.junit.runner.JUnitCore();
-        // org.junit.runner.Result result = junit.run(SCTTest.class);
+        // org.junit.runner.Result result = junit.run(SctTest.class);
         // // org.junit.runner.Result result =
-        // JUnitCore.runClasses(SCTTest.class);
+        // JUnitCore.runClasses(SctTest.class);
         // boolean wasSuccessful = result.wasSuccessful();
         //
         // int failureCount = result.getFailureCount();

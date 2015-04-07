@@ -1,6 +1,7 @@
 package hu.bme.mit.remo.scverif.ui.handlers.sct;
 
 import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
+import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -20,145 +21,117 @@ import org.yakindu.sct.model.sgraph.Statechart;
 
 public class SCTAnalyzeHandler extends AbstractHandler {
 
-	/**
-	 * végrehajtás... ez a kötelező metódus
-	 */
-	@Override
-	public Object execute(ExecutionEvent event) throws ExecutionException {
-		// Return the active shell. Is not necessarily the active workbench
-		// window shell; we pass the execution event that contains the
-		// application context
-		Shell shell = HandlerUtil.getActiveShell(event);
+    /**
+     * végrehajtás... ez a kötelező metódus
+     */
+    @Override
+    public Object execute(ExecutionEvent event) throws ExecutionException {
+        // Return the active shell. Is not necessarily the active workbench
+        // window shell; we pass the execution event that contains the
+        // application context
+        Shell shell = HandlerUtil.getActiveShell(event);
 
-		IFile selectedSctFile = getSelectedSctFile(event);
-		
-		if (selectedSctFile == null) {
-			MessageDialog
-					.openError(shell, "ReMo info",
-							"Please select an SCT file!");
-			return null;
-		}
+        IFile selectedSctFile = getSelectedSctFile(event);
 
-		analyzeSctFile(selectedSctFile, shell);
+        if (selectedSctFile == null) {
+            MessageDialog.openError(shell, "ReMo info", "Please select an SCT file!");
+            return null;
+        }
 
-		return null;
-	}
+        analyzeSctFile(selectedSctFile, shell);
 
+        return null;
+    }
 
-	public void analyzeSctFile(IFile file, Shell shell) {
+    public void analyzeSctFile(IFile file, Shell shell) {
 
-		// Loads the resource
-		ResourceSet resourceSet = new ResourceSetImpl();
-		URI fileURI = URI.createPlatformResourceURI(file.getFullPath()
-				.toString(), false);
-		Resource res = resourceSet.getResource(fileURI, true);
+        // Loads the resource
+        ResourceSet resourceSet = new ResourceSetImpl();
+        URI fileURI = URI.createPlatformResourceURI(file.getFullPath().toString(), false);
+        Resource res = resourceSet.getResource(fileURI, true);
 
-		// Process SCT model
-		for (EObject content : res.getContents()) {
-			// EObject content = res.getContents().get(0);
-			// if it's an implementation of the model object 'Statechart'.
-			if (content instanceof org.yakindu.sct.model.sgraph.impl.StatechartImpl) {
-				Statechart statechart = (Statechart) content;
-				// TreeIterator<EObject> eAllContents =
-				// statechart.eAllContents();
-				StatechartAnalyzer stateChartAnalyzer = new StatechartAnalyzer(
-						statechart);
-				stateChartAnalyzer.processStatechart();
-				
-				String anotherSpecification = "/*************************\n" +
-						"   Interfaces of the chess clock\n" +
-						"   Do not modify!\n" +
-						" *************************/\n" +
-						"interface Buttons:\n" +
-						"in event button\n" +
-						"\n"+
-						"interface Display:\n" +
-						"var text:string = \"Initial text\"\n" +
-						"\n"+
-						" internal:\n" +
-						"/*************************\n" +
-						"   Insert additional variables here:\n" +
-						" *************************/\n" +
-						" \n" +
-						"// var myExampleInteger: integer\n" +
-						"// var myExampleText: string\n";
-				boolean interfaceSpecificationEquals = stateChartAnalyzer.interfaceSpecificationEqualsTo(anotherSpecification);
-				System.out.println("interfaceSpecificationEquals: "+interfaceSpecificationEquals);
-			}
-			// if (content instanceof
-			// org.eclipse.gmf.runtime.notation.impl.DiagramImpl) {
-			// // ez nem fog kelleni...
-			// }
-		}
+        // Process SCT model
+        for (EObject content : res.getContents()) {
+            // EObject content = res.getContents().get(0);
+            // if it's an implementation of the model object 'Statechart'.
+            if (content instanceof org.yakindu.sct.model.sgraph.impl.StatechartImpl) {
+                Statechart statechart = (Statechart) content;
+                // TreeIterator<EObject> eAllContents =
+                // statechart.eAllContents();
+                StatechartAnalyzer stateChartAnalyzer = new StatechartAnalyzer(statechart);
+                stateChartAnalyzer.processStatechart();
 
-		MessageDialog
-				.openInformation(
-						shell,
-						"Info (Pete)",
-						"(TEMP MESSAGE) Please look at the console for inspecting the iteration of the statechart...");
-	}
+                // TODO: it was just a test!
+                String anotherSpecification = "/*************************\n" + "   Interfaces of the chess clock\n"
+                        + "   Do not modify!\n" + " *************************/\n" + "interface Buttons:\n"
+                        + "in event button\n" + "\n" + "interface Display:\n" + "var text:string = \"Initial text\"\n"
+                        + "\n" + " internal:\n" + "/*************************\n"
+                        + "   Insert additional variables here:\n" + " *************************/\n" + " \n"
+                        + "// var myExampleInteger: integer\n" + "// var myExampleText: string\n";
+                boolean interfaceSpecificationEquals = stateChartAnalyzer
+                        .interfaceSpecificationEqualsTo(anotherSpecification);
+                System.out.println("interfaceSpecificationEquals: " + interfaceSpecificationEquals);
+            }
+            // if (content instanceof org.eclipse.gmf.runtime.notation.impl.DiagramImpl) {
+            //     // ez nem fog kelleni...
+            // }
+        }
 
-	/**
-	 * Returns the selected SCT file or null if no SCT file has been selected
-	 * 
-	 * TODO: fix the ugly methods 
-	 * 
-	 * @param event
-	 * @return
-	 */
-	public IFile getSelectedSctFile(ExecutionEvent event) {
+        MessageDialog.openInformation(shell, "Info (Pete)",
+                "(TEMP MESSAGE) Please look at the console for inspecting the iteration of the statechart...");
+    }
 
-		// we'll try 2 methods:
-		// 1. when we click on a given file with the right mouse button and try
-		// to process the file
-		// 2. when we click on the toolbar icon and have to look for the
-		// selected file
+    /**
+     * Returns the selected SCT file or null if no SCT file has been selected
+     * 
+     * TODO: fix the ugly methods 
+     * 
+     * @param event
+     * @return
+     */
+    public IFile getSelectedSctFile(ExecutionEvent event) {
 
-		// 1st try:
+        // we'll try 2 methods:
+        // 1. when we click on a given file with the right mouse button and try to process the file
+        // 2. when we click on the toolbar icon and have to look for the selected file
 
-		// Return the active menu selection. The active menu is a registered
-		// context menu; we pass the execution event that contains
-		// the application context
-		ISelection currentSelection;
-		IStructuredSelection currentSelectionStructured;
-		String fileTypeClass = "org.eclipse.core.internal.resources.File";
-		String expectedFileExtension = "sct";
+        // 1st try:
 
-		currentSelection = HandlerUtil.getActiveMenuSelection(event);
-		currentSelectionStructured = (IStructuredSelection) currentSelection;
-		if (currentSelectionStructured != null) {
-			// Returns the first element in this selection, or null if the
-			// selection
-			// is empty.
-			Object firstElement = currentSelectionStructured.getFirstElement();
-			if (firstElement != null
-					&& firstElement.getClass().getTypeName() == fileTypeClass) {
-				IFile file = (IFile) firstElement;
-				String fileExtension = file.getFileExtension();
-				return (expectedFileExtension.equals(fileExtension) ? file
-						: null);
-			} else {
-				return null;
-			}
-		}
+        String fileTypeClass = "org.eclipse.core.internal.resources.File";
 
-		// 2nd try (e.g. when clicking the icon on the toolbar)
-		currentSelection = HandlerUtil.getCurrentSelection(event);
-		currentSelectionStructured = (IStructuredSelection) currentSelection;
-		if (currentSelectionStructured == null) {
-			return null;
-		}
+        // Return the active menu selection. The active menu is a registered context menu; 
+        // we pass the execution event that contains the application context		
+        ISelection currentSelection = HandlerUtil.getActiveMenuSelection(event);
+        IStructuredSelection currentSelectionStructured = (IStructuredSelection) currentSelection;
+        // Returns the first element in this selection, or null if the selection is empty.
+        Object firstElement = (currentSelectionStructured != null) ? currentSelectionStructured.getFirstElement()
+                : null;
 
-		Object firstElement = currentSelectionStructured.getFirstElement();
+        if (firstElement != null && firstElement.getClass().getTypeName() == fileTypeClass) {
+            IFile file = (IFile) firstElement;
+            String fileExtension = file.getFileExtension();
+            return (DoRemoJobs.SCT_FILE_EXTENSION.equals(fileExtension) ? file : null);
+        } else {
+            return null;
+        }
 
-		if (firstElement != null
-				&& firstElement.getClass().getTypeName() == fileTypeClass) {
-			IFile file = (IFile) firstElement;
-			String fileExtension = file.getFileExtension();			
-			return (expectedFileExtension.equals(fileExtension) ? file
-					: null);
-		} else {
-			return null;
-		}
-	}
+        // TODO: create 2nd try
+        //		// 2nd try (e.g. when clicking the icon on the toolbar)
+        //		currentSelection = HandlerUtil.getCurrentSelection(event);
+        //		if (currentSelectionStructured == null) {
+        //			return null;
+        //		}
+        //
+        //		firstElement = currentSelectionStructured.getFirstElement();
+        //
+        //		if (firstElement != null
+        //				&& firstElement.getClass().getTypeName() == fileTypeClass) {
+        //			IFile file = (IFile) firstElement;
+        //			String fileExtension = file.getFileExtension();			
+        //			return (DoRemoJobs.SCT_FILE_EXTENSION.equals(fileExtension) ? file
+        //					: null);
+        //		} else {
+        //			return null;
+        //		}
+    }
 }

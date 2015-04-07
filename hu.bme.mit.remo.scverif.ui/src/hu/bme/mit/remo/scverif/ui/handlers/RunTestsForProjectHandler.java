@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -33,9 +34,15 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IPluginDescriptor;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.QualifiedName;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.content.IContentTypeMatcher;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaModelException;
@@ -47,44 +54,85 @@ public class RunTestsForProjectHandler extends AbstractHandler {
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
-        System.out.println("RunTestsForProjectHandler::execute(), at: '"+RunTestsForProjectHandler.class.getProtectionDomain().getCodeSource().getLocation()+"'.");
+        Logger logger = DoRemoJobs.logger;
         
-        try {
-        
-        Shell shell = HandlerUtil.getActiveShell(event);
-        
-        IStructuredSelection selection = (IStructuredSelection) HandlerUtil
-                .getActiveMenuSelection(event);
-        Object firstElement = selection.getFirstElement();
+        logger.info("RunTestsForProjectHandler::execute(), at: '"
+                + RunTestsForProjectHandler.class.getProtectionDomain().getCodeSource().getLocation() + "'.");
+
+        final Shell shell = HandlerUtil.getActiveShell(event);
+
+        // https://eclipse.org/articles/Article-Concurrency/jobs-api.html
+        final Job processHomeworksJob = new Job("Processing homeworks...") {
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                // // Generate instances
+                // SubProgressMonitor subProgressMonitor = null;                
                 
-        Object[] selectedObjects = selection.toArray();
-        
-        ArrayList<IProject> iProjectsList = new ArrayList<IProject>();
+                try {
+
+                    IStructuredSelection selection = (IStructuredSelection) HandlerUtil.getActiveMenuSelection(event);
+                    Object[] selectedObjects = selection.toArray();
+
+                    ArrayList<IProject> iProjectsList = new ArrayList<IProject>();
+
+                    for (Object selectedObject : selectedObjects) {
+                        logger.info("object.getClass().getName(): " + selectedObject.getClass().getName());
+                        if (selectedObject instanceof IJavaProject) { // Package Explorerből megnyitva
+                            IJavaProject javaProject = (IJavaProject) selectedObject;
+                            logger.info("javaProject.getElementName(): " + javaProject.getElementName());
+                            IPath iPath = javaProject.getPath();
+                            File file = iPath.toFile();
+                            logger.info("file.getAbsolutePath(): " + file.getAbsolutePath());
+                            logger.info("file.toURI(): " + file.toURI());
+                            IProject iProject = javaProject.getProject();
+                            logger.info("iProject.getRawLocationURI(): " + iProject.getRawLocationURI());
+                            // add the project to the list
+                            iProjectsList.add(iProject);
+                        } else if(selectedObject instanceof IProject){ // Project Explorerből megnyitva
+                            IProject iProject = (IProject) selectedObject;
+                            logger.info("iProject.getRawLocationURI(): " + iProject.getRawLocationURI());
+                            // add the project to the list
+                            iProjectsList.add(iProject);                    
+                        }
+                    }
+
+                    TreeMap<String, IProject> matchingProjects = DoRemoJobs.getMatchingProjects(iProjectsList);
+
+                    logger.info("matchingProjects.size(): "+matchingProjects.size());
+                    
+                    DoRemoJobs doRemoJobs = new DoRemoJobs(shell);                        
+                    doRemoJobs.runTestsOnProjects(matchingProjects);
+                } catch (OperationCanceledException e){
+                    logger.severe("Operation has been cancelled! "+e.getMessage());
+                    return Status.CANCEL_STATUS;
+                } catch (Exception e) {
+                    logger.severe("Something went wrong when executing homework analyzation (exception type: '"
+                            + e.getClass().getName() + "'): " + e.getMessage());
+                    e.printStackTrace();
+                }                
                 
-        for (Object selectedObject : selectedObjects) {
-            System.out.println("object.getClass().getName(): "+selectedObject.getClass().getName());
-            if(selectedObject instanceof IJavaProject){
-                IJavaProject javaProject = (IJavaProject) selectedObject;
-                System.out.println("javaProject.getElementName(): "+javaProject.getElementName());
-                IPath iPath = javaProject.getPath();
-                File file = iPath.toFile();
-                System.out.println("file.getAbsolutePath(): "+file.getAbsolutePath());
-                System.out.println("file.toURI(): "+file.toURI());
-                IProject iProject = javaProject.getProject();
-                System.out.println("iProject.getRawLocationURI(): "+iProject.getRawLocationURI());
-                // add the project to the list
-                iProjectsList.add(iProject);
+                return Status.OK_STATUS;
             }
-        }
+        };
         
-        TreeMap<String,IProject> matchingProjects = DoRemoJobs.getMatchingProjects(iProjectsList);      
-        
-//            DoRemoJobs doRemoJobs = new DoRemoJobs(shell);
-//            doRemoJobs.doRemoJobs();
-        } catch (Exception e) {
-            System.err.println("Something went wrong when executing homework analyzation (exception type: '"+e.getClass().getName()+"'): "+e.getMessage());
-            e.printStackTrace();
-        }
+        // "the user will be shown a progress dialog but will be given the option to run the job in the background by clicking a button in the dialog"
+        processHomeworksJob.setUser(true);
+        processHomeworksJob.setPriority(Job.LONG);
+
+        processHomeworksJob.addJobChangeListener(new JobChangeAdapter() {
+            @Override
+            public void done(IJobChangeEvent event) {
+                if (event.getResult().isOK()) {
+                    DoRemoJobs.logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
+                } else {
+                    DoRemoJobs.logger.severe("Job called '" + processHomeworksJob.getName()
+                            + "' did not complete successfully");
+                }
+
+                processHomeworksJob.removeJobChangeListener(this); // we don't want to listen to this job anymore
+            }
+        });
+        processHomeworksJob.schedule();        
 
         return null; // return the result of the execution - reserved for future use, must be null!!
     }

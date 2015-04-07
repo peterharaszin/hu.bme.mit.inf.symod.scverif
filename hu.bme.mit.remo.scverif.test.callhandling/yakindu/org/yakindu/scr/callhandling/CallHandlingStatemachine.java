@@ -9,7 +9,8 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 
 		private SCIUserOperationCallback operationCallback;
 
-		public void setSCIUserOperationCallback(SCIUserOperationCallback operationCallback) {
+		public void setSCIUserOperationCallback(
+				SCIUserOperationCallback operationCallback) {
 			this.operationCallback = operationCallback;
 		}
 

@@ -1,4 +1,8 @@
+# ignore compiled class files
 *.class
+
+# ignore log files
+*.log
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
@@ -15,3 +19,5 @@ hs_err_pid*
 src-gen/
 # ignore bin directories
 bin/
+# ignore the sctcopy project directories
+hu.bme.mit.scverif.sctcopy/

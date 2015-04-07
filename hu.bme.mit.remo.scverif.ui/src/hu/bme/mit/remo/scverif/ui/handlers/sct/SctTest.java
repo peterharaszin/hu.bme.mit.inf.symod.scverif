@@ -11,7 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 //import org.yakindu.sct.model.sgraph.Statechart;
 
-public class SCTTest {
+public class SctTest {
 
 	private StatechartAnalyzer stateChartAnalyzer = new StatechartAnalyzer();
 //	private Statechart statechartFromBundle;

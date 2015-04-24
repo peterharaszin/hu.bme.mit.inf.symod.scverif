@@ -1,7 +1,7 @@
 package hu.bme.mit.remo.scverif.ui.handlers.sct;
 
-import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
-import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
+import java.util.ArrayList;
+import java.util.logging.Logger;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -18,6 +18,11 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.yakindu.sct.model.sgraph.Statechart;
+import org.yakindu.sct.model.sgraph.impl.TransitionImpl;
+import org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl;
+
+import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
+import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
 
 public class SCTAnalyzeHandler extends AbstractHandler {
 
@@ -60,6 +65,15 @@ public class SCTAnalyzeHandler extends AbstractHandler {
                 // statechart.eAllContents();
                 StatechartAnalyzer stateChartAnalyzer = new StatechartAnalyzer(statechart);
                 stateChartAnalyzer.processStatechart();
+                
+                Logger logger = DoRemoJobs.logger;
+                
+                logger.info("getting interfaces... (dirty test)");
+                
+                ArrayList<InterfaceScopeImpl> interfaces = stateChartAnalyzer.getInterfaces();
+                for (InterfaceScopeImpl interfaceScopeImpl : interfaces) {
+                    logger.info("current interface's name: '"+interfaceScopeImpl.getName()+"'");
+                }
 
                 // TODO: it was just a test!
                 String anotherSpecification = "/*************************\n" + "   Interfaces of the chess clock\n"
@@ -80,7 +94,7 @@ public class SCTAnalyzeHandler extends AbstractHandler {
         MessageDialog.openInformation(shell, "Info (Pete)",
                 "(TEMP MESSAGE) Please look at the console for inspecting the iteration of the statechart...");
     }
-
+    
     /**
      * Returns the selected SCT file or null if no SCT file has been selected
      * 

@@ -93,7 +93,9 @@ public class StatechartProcessingHandler extends AbstractHandler {
                 if (event.getResult().isOK()) {
                     DoRemoJobs.logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
                 } else {
-                    DoRemoJobs.logger.severe("Job called '" + processHomeworksJob.getName()
+                    DoRemoJobs.logger.severe(
+//                    DoRemoJobs.logger.error(
+                            "Job called '" + processHomeworksJob.getName()
                             + "' did not complete successfully");
                 }
 

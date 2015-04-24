@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+//import org.slf4j.Logger;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -104,9 +105,12 @@ public class RunTestsForProjectHandler extends AbstractHandler {
                     doRemoJobs.runTestsOnProjects(matchingProjects);
                 } catch (OperationCanceledException e){
                     logger.severe("Operation has been cancelled! "+e.getMessage());
+//                    logger.error("Operation has been cancelled! "+e.getMessage());
                     return Status.CANCEL_STATUS;
                 } catch (Exception e) {
-                    logger.severe("Something went wrong when executing homework analyzation (exception type: '"
+                    logger.severe(
+//                    logger.error(
+                            "Something went wrong when executing homework analyzation (exception type: '"
                             + e.getClass().getName() + "'): " + e.getMessage());
                     e.printStackTrace();
                 }                
@@ -125,7 +129,9 @@ public class RunTestsForProjectHandler extends AbstractHandler {
                 if (event.getResult().isOK()) {
                     DoRemoJobs.logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
                 } else {
-                    DoRemoJobs.logger.severe("Job called '" + processHomeworksJob.getName()
+                    DoRemoJobs.logger
+                        .severe("Job called '" + processHomeworksJob.getName()
+//                        .error("Job called '" + processHomeworksJob.getName()
                             + "' did not complete successfully");
                 }
 

@@ -9,8 +9,7 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 
 		private SCIUserOperationCallback operationCallback;
 
-		public void setSCIUserOperationCallback(
-				SCIUserOperationCallback operationCallback) {
+		public void setSCIUserOperationCallback(SCIUserOperationCallback operationCallback) {
 			this.operationCallback = operationCallback;
 		}
 
@@ -138,8 +137,8 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 	}
 
 	/**
-	 * This method resets the incoming events (time events included).
-	 */
+	* This method resets the incoming events (time events included).
+	*/
 	protected void clearEvents() {
 		sCIUser.clearEvents();
 		sCIPhone.clearEvents();
@@ -150,14 +149,14 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 	}
 
 	/**
-	 * This method resets the outgoing events.
-	 */
+	* This method resets the outgoing events.
+	*/
 	protected void clearOutEvents() {
 	}
 
 	/**
-	 * Returns true if the given state is currently active otherwise false.
-	 */
+	* Returns true if the given state is currently active otherwise false.
+	*/
 	public boolean isStateActive(State state) {
 		switch (state) {
 			case main_region_Idle :
@@ -174,21 +173,21 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 	}
 
 	/**
-	 * Set the {@link ITimer} for the state machine. It must be set
-	 * externally on a timed state machine before a run cycle can be correct
-	 * executed.
-	 * 
-	 * @param timer
-	 */
+	* Set the {@link ITimer} for the state machine. It must be set
+	* externally on a timed state machine before a run cycle can be correct
+	* executed.
+	* 
+	* @param timer
+	*/
 	public void setTimer(ITimer timer) {
 		this.timer = timer;
 	}
 
 	/**
-	 * Returns the currently used timer.
-	 * 
-	 * @return {@link ITimer}
-	 */
+	* Returns the currently used timer.
+	* 
+	* @return {@link ITimer}
+	*/
 	public ITimer getTimer() {
 		return timer;
 	}
@@ -261,9 +260,15 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 			nextStateIndex = 0;
 			stateVector[0] = State.main_region_Dismiss_Call;
 		} else {
-			if (timeEvents[0]) {
-				sCIPhone.duration += 1;
-			}
+			nextStateIndex = 0;
+			stateVector[0] = State.$NullState$;
+
+			timer.unsetTimer(this, 0);
+
+			timer.setTimer(this, 0, 1 * 1000, true);
+
+			nextStateIndex = 0;
+			stateVector[0] = State.main_region_Active_Call;
 		}
 	}
 

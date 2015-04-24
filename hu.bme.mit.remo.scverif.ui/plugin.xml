@@ -69,7 +69,32 @@
                   </with>
                </and>
             </visibleWhen>
-         </command>         
+         </command>       
+         
+        <command
+               commandId="hu.bme.mit.remo.scverif.commands.sct.analyze"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Analyze SCT model"
+               style="push"
+               tooltip="ReMo - Analyze SCT model">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeMenuSelection">
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IFile">
+                        <test
+                              property="org.eclipse.core.resources.name"
+                              value="*.sct">
+                        </test>
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>
          
       </menuContribution>      
             
@@ -108,7 +133,6 @@
                </and>
             </visibleWhen>
          </command>
-
          
          <command
                commandId="hu.bme.mit.remo.scverif.commands.sct.copytoprojects"
@@ -136,6 +160,31 @@
                      </iterate>
                   </with>
                </and>
+            </visibleWhen>
+         </command>
+
+         <command
+               commandId="hu.bme.mit.remo.scverif.commands.sct.analyze"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Analyze SCT model"
+               style="push"
+               tooltip="ReMo - Analyze SCT model">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeMenuSelection">
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IFile">
+                        <test
+                              property="org.eclipse.core.resources.name"
+                              value="*.sct">
+                        </test>
+                     </adapt>
+                  </iterate>
+               </with>
             </visibleWhen>
          </command>
 
@@ -207,14 +256,38 @@
             </visibleWhen>
          </command>          
          
+         <command
+               commandId="hu.bme.mit.remo.scverif.commands.sct.analyze"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Analyze SCT model"
+               style="push"
+               tooltip="ReMo - Analyze SCT model">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeMenuSelection">
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IFile">
+                        <test
+                              property="org.eclipse.core.resources.name"
+                              value="*.sct">
+                        </test>
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>         
+         
       </menuContribution>
-      
       
       <menuContribution
             allPopups="false"
             locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
-            
-         <!--
+      
+      <!--      
          <toolbar
                id="hu.bme.mit.remo.scverif.toolbars.sct.analyze"
                label="Analyze SCT file (ReMo)">

@@ -12,8 +12,9 @@
         <outgoingTransitions xmi:id="_ApNfIEL5EeSapYoaiQPv4g" specification="User.accept_call" target="_z0U3YEL4EeSapYoaiQPv4g"/>
         <outgoingTransitions xmi:id="_F6mgQEL5EeSapYoaiQPv4g" specification="User.dismiss_call" target="_z0U3YEL4EeSapYoaiQPv4g"/>
       </vertices>
-      <vertices xsi:type="sgraph:State" xmi:id="_z0U3YEL4EeSapYoaiQPv4g" specification="every 1 s /&#xD;&#xA;Phone.duration += 1" name="Active Call" incomingTransitions="_ApNfIEL5EeSapYoaiQPv4g _F6mgQEL5EeSapYoaiQPv4g">
+      <vertices xsi:type="sgraph:State" xmi:id="_z0U3YEL4EeSapYoaiQPv4g" specification="every 1 s /&#xD;&#xA;Phone.duration += 1" name="Active Call" incomingTransitions="_ApNfIEL5EeSapYoaiQPv4g _F6mgQEL5EeSapYoaiQPv4g _vkLdsOn1EeS1meYk8LDSoQ">
         <outgoingTransitions xmi:id="_eBFYEEL5EeSapYoaiQPv4g" specification="User.dismiss_call" target="_1-mWkEL4EeSapYoaiQPv4g"/>
+        <outgoingTransitions xmi:id="_vkLdsOn1EeS1meYk8LDSoQ" specification="always&#xD;&#xA;" target="_z0U3YEL4EeSapYoaiQPv4g"/>
       </vertices>
       <vertices xsi:type="sgraph:State" xmi:id="_1-mWkEL4EeSapYoaiQPv4g" specification="exit /&#xD;&#xA;Phone.duration = 0" name="Dismiss Call" incomingTransitions="_eBFYEEL5EeSapYoaiQPv4g">
         <outgoingTransitions xmi:id="_KZkl8EL5EeSapYoaiQPv4g" specification="after 2 s" target="_-JslMEL3EeSapYoaiQPv4g"/>
@@ -182,6 +183,17 @@
       <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_eBJCckL5EeSapYoaiQPv4g" points="[2, 10, 3, -51]$[2, 58, 3, -3]"/>
       <sourceAnchor xsi:type="notation:IdentityAnchor" xmi:id="_eBOiAEL5EeSapYoaiQPv4g" id="(0.4157303370786517,0.7924528301886793)"/>
       <targetAnchor xsi:type="notation:IdentityAnchor" xmi:id="_eBPJEEL5EeSapYoaiQPv4g" id="(0.41414141414141414,0.07547169811320754)"/>
+    </edges>
+    <edges xmi:id="_vk85wOn1EeS1meYk8LDSoQ" type="Transition" element="_vkLdsOn1EeS1meYk8LDSoQ" source="_z0XToEL4EeSapYoaiQPv4g" target="_z0XToEL4EeSapYoaiQPv4g">
+      <children xsi:type="notation:DecorationNode" xmi:id="_vk-H4On1EeS1meYk8LDSoQ" type="TransitionExpression">
+        <styles xsi:type="notation:ShapeStyle" xmi:id="_vk-H4en1EeS1meYk8LDSoQ"/>
+        <layoutConstraint xsi:type="notation:Location" xmi:id="_vk-H4un1EeS1meYk8LDSoQ" y="10"/>
+      </children>
+      <styles xsi:type="notation:ConnectorStyle" xmi:id="_vk85wen1EeS1meYk8LDSoQ" lineColor="4210752"/>
+      <styles xsi:type="notation:FontStyle" xmi:id="_vk9g0On1EeS1meYk8LDSoQ" fontName="Verdana"/>
+      <bendpoints xsi:type="notation:RelativeBendpoints" xmi:id="_vk85wun1EeS1meYk8LDSoQ" points="[-2, 0, -2, 0]$[-60, 0, -60, 0]$[-60, 28, -60, 28]$[-2, 2, -2, 2]"/>
+      <sourceAnchor xsi:type="notation:IdentityAnchor" xmi:id="_vlUtMOn1EeS1meYk8LDSoQ" id="(0.01875,0.25396825396825395)"/>
+      <targetAnchor xsi:type="notation:IdentityAnchor" xmi:id="_vlUtMen1EeS1meYk8LDSoQ" id="(0.01875,0.25396825396825395)"/>
     </edges>
   </notation:Diagram>
 </xmi:XMI>

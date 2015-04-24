@@ -3,6 +3,7 @@ package hu.bme.mit.remo.scverif.ui.handlers.sct;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.logging.Logger;
+//import org.slf4j.Logger;
 
 import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
 

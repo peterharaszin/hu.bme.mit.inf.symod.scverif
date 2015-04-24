@@ -1,11 +1,5 @@
 package hu.bme.mit.remo.scverif.ui.jobs;
 
-import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
-import hu.bme.mit.remo.scverif.processing.sgen.YakinduGeneratorExecutorModified;
-import hu.bme.mit.remo.scverif.ui.BuildError;
-import hu.bme.mit.remo.scverif.ui.YakinduSCTFileNotFoundException;
-import hu.bme.mit.remo.scverif.ui.YakinduSGenFileNotFoundException;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,9 +26,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.FileHandler;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,6 +52,7 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.widgets.Display;
@@ -74,6 +67,15 @@ import org.junit.runner.notification.Failure;
 import org.yakindu.sct.model.sgen.GeneratorEntry;
 import org.yakindu.sct.model.sgen.GeneratorModel;
 import org.yakindu.sct.model.sgraph.Statechart;
+
+import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
+import hu.bme.mit.remo.scverif.processing.sgen.YakinduGeneratorExecutorModified;
+import hu.bme.mit.remo.scverif.ui.BuildError;
+import hu.bme.mit.remo.scverif.ui.YakinduSCTFileNotFoundException;
+import hu.bme.mit.remo.scverif.ui.YakinduSGenFileNotFoundException;
+
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 
 /**
  * 1. sct-fájl átmásolása X helyről
@@ -101,7 +103,7 @@ public class DoRemoJobs {
     private static final String testCompiledClassFileFullPathInIProject = testCompiledClassFolderPathInIProject
             + testClassName + ".class";
 
-    private FileHandler logFilehandler;
+//    private FileHandler logFilehandler;
     //
     // private IProject remoProject;
 
@@ -127,6 +129,7 @@ public class DoRemoJobs {
             dateFormatPattern.replace(' ', '_'));
 
     public static final Logger logger = Logger.getLogger("RemoLog");
+//    public static final Logger logger = LoggerFactory.getLogger(DoRemoJobs.class);
     private static DoRemoJobs.MyConsoleHandler myConsoleHandler = new MyConsoleHandler();
     private static final String projectRegex = "hu\\.bme\\.mit\\.inf\\.symod\\.(\\w{6})\\.homework";;
     private static final Pattern patternCompiled = Pattern.compile(projectRegex, Pattern.CASE_INSENSITIVE);
@@ -144,19 +147,18 @@ public class DoRemoJobs {
      * @author Pete
      */
     public static class MyConsoleHandler extends java.util.logging.StreamHandler {
-        private java.util.logging.Formatter formatter = new SimpleFormatter();
+        private java.util.logging.Formatter formatter = new java.util.logging.SimpleFormatter();
 
         public void publish(java.util.logging.LogRecord record) {
             if (record.getLevel().intValue() < java.util.logging.Level.WARNING.intValue()) {
-                // flushing the stream, because the error output stream is not
-                // buffered, and this way the messages can mix:
-                // (@see
-                // http://stackoverflow.com/questions/9146257/why-do-system-err-statements-get-printed-first-sometimes)
-                System.out.flush();
                 System.out.println(formatter.formatMessage(record));
+                // flushing the stream, because the error output stream is not buffered, and this way the messages can mix:
+                // (@see http://stackoverflow.com/questions/9146257/why-do-system-err-statements-get-printed-first-sometimes)
+                System.out.flush();                
             } else {
-                System.err.flush();
+                System.out.flush(); // flush the outstream here too - not to get mixed
                 System.err.println(formatter.format(record));
+                System.err.flush();
             }
         }
     }
@@ -326,16 +328,16 @@ public class DoRemoJobs {
         return project;
     }
 
-    @SuppressWarnings("unused")
-    private void setLogger() throws SecurityException, IOException {
-        // get current working directory
-        String currentWorkingDirectory = java.nio.file.Paths.get(".").toAbsolutePath().normalize().toString();
-        // configuring the logger with the handler and formatter 
-        logFilehandler = new FileHandler(currentWorkingDirectory + "/RemoLogFile.log");
-        logger.addHandler(logFilehandler);
-        SimpleFormatter formatter = new SimpleFormatter();
-        logFilehandler.setFormatter(formatter);
-    }
+//    @SuppressWarnings("unused")
+//    private void setLogger() throws SecurityException, IOException {
+//        // get current working directory
+//        String currentWorkingDirectory = java.nio.file.Paths.get(".").toAbsolutePath().normalize().toString();
+//        // configuring the logger with the handler and formatter 
+//        logFilehandler = new FileHandler(currentWorkingDirectory + "/RemoLogFile.log");
+//        logger.addHandler(logFilehandler);
+//        SimpleFormatter formatter = new SimpleFormatter();
+//        logFilehandler.setFormatter(formatter);
+//    }
 
     /**
      * Run all the tests on a given project.
@@ -369,21 +371,17 @@ public class DoRemoJobs {
 
 //        deleteYakinduTargetFolderContents(currentIProject);
 
-        cleanProject(currentIProject, nullProgressMonitor);
+        // cleaning does NOT seem to work synchronously even if some sources found on the internet say so... so this has been commented out (and it's not necessarily needed). 
+        // cleanProject(currentIProject, nullProgressMonitor);
 
         copySctFile(projectsRootDirectoryPath, neptunCode, currentIProject);
 
         // logger.info("CLEAN - bin content AFTER");
         // listFilesInDirectory(binPath);
 
+        checkBuildErrors(currentIProject);
+        
         buildProject(currentIProject, nullProgressMonitor);
-
-        int maxProblemSeverity = currentIProject
-                .findMaxProblemSeverity(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
-        if (maxProblemSeverity == IMarker.SEVERITY_ERROR) {
-            throw new BuildError("A build error occurred in the project called '" + currentIProject.getName()
-                    + "' at '" + currentIProject.getRawLocationURI() + "'!");
-        }
 
         // logger.info("BUILD - bin content AFTER");
         // listFilesInDirectory(binPath);
@@ -393,8 +391,79 @@ public class DoRemoJobs {
         // logger.info("TESTING - bin content BEFORE");
         // listFilesInDirectory(binPath);
 
-        return testStatechart(currentIProject);
+        Result result = testStatechart(currentIProject);
+        
+        return result;
 
+    }
+    
+    public void checkBuildErrors(IProject project) throws CoreException, BuildError {
+        logger.info("Checking build errors...");
+        
+        if(hasBuildErrors(project)){
+            throw new BuildError("A build error occurred in the project called '" + project.getName()
+            + "' (at '" + project.getRawLocationURI() + "')!");            
+        }
+    }
+    
+    public boolean hasBuildErrors(IProject project) throws CoreException, BuildError{
+        
+        IMarker[] generalProblemMarkers = project.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
+                
+        for (IMarker marker : generalProblemMarkers) {
+            String output = "";
+            
+            if("org.yakindu.sct.generator.genmodel.ui.sgen.check.fast".equals(marker.getType())){
+                output += "Yakindu-related error: something was wrong with the sgen file! ";
+            }
+            
+            output += 
+                "message: "+marker.getAttribute(IMarker.MESSAGE)
+                +", severity: "+marker.getAttribute(IMarker.SEVERITY, Integer.MAX_VALUE)
+                +", line number: "+marker.getAttribute(IMarker.LINE_NUMBER)
+                +", source id: "+marker.getAttribute(IMarker.SOURCE_ID)
+                +", resource URI: '"+marker.getResource().getRawLocationURI()
+                +"', type: "+marker.getType();
+            
+            if(!"JDT".equals(marker.getAttribute(IMarker.SOURCE_ID))){ // if the problem is not Java code specific, emphasize it
+                logger.severe(output);
+            } else {
+                logger.info(output);
+            }
+            
+            
+        }
+        
+//        IMarker[] javaProblemMarkers = project.findMarkers(IJavaModelMarker.JAVA_MODEL_PROBLEM_MARKER, true, IResource.DEPTH_INFINITE);
+//        for (IMarker marker : javaProblemMarkers) {
+//            int severity = marker.getAttribute(IMarker.SEVERITY, Integer.MAX_VALUE);
+//            
+////            Object[] attributes = marker.getAttributes(new String[]{IMarker.MESSAGE} );
+////            for (Object object : attributes) {
+////                logger.info("attr: "+object);
+////            }
+//            
+//            String errorMessage = (String)marker.getAttribute(IMarker.MESSAGE);
+//            
+//            int lineNumber = (Integer)marker.getAttribute(IMarker.LINE_NUMBER);
+//            IResource resource = marker.getResource();
+//            String type = marker.getType();
+//            
+//            logger.info("message: "+errorMessage +"severity: "+severity+", line number: "+lineNumber+", source id: "+marker.getAttribute(IMarker.SOURCE_ID)+", resource URI: '"+resource.getRawLocationURI()+"', type: "+type);
+//            
+//            //for (Object name : marker.getAttributes().keySet()) { 
+//            //    logger.severe("   "+name+": "+marker.getAttribute((String)name, "<nothing>")+"\n"); 
+//            //}             
+//        }
+        
+//        logger.info("generalProblemMarkers: "+generalProblemMarkers.length+", javaProblemMarkers: "+javaProblemMarkers.length);
+        
+        int maxProblemSeverity = project
+                .findMaxProblemSeverity(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
+        if (maxProblemSeverity == IMarker.SEVERITY_ERROR) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -764,6 +833,7 @@ public class DoRemoJobs {
                     logger.info("Job completed successfully");
                 } else {
                     logger.severe("Job did not complete successfully");
+//                    logger.error("Job did not complete successfully");
                 }
             }
         });
@@ -1079,6 +1149,7 @@ public class DoRemoJobs {
         for (String natureId : requiredNatures) {
             if (!project.isNatureEnabled(natureId)) {
                 logger.warning("The project nature called '" + natureId + "' is not enabled!");
+//                logger.warn("The project nature called '" + natureId + "' is not enabled!");
                 return false;
             }
         }
@@ -1404,6 +1475,7 @@ public class DoRemoJobs {
 
         } catch (MalformedURLException e) {
             logger.severe("Error with file location (URL)");
+//            logger.error("Error with file location (URL)");
             // e.printStackTrace();
             throw e;
         }
@@ -1424,9 +1496,9 @@ public class DoRemoJobs {
             }
             logger.info("=======");
 
-            logger.info("Waiting 2 secs for the classloader to work correctly...");
+            // logger.info("Waiting 2 secs for the classloader to work correctly...");
             // java.util.concurrent.TimeUnit.SECONDS.sleep(2);
-            logger.info("continuing...");
+            // logger.info("continuing...");
 
             // Class<?> myclass = Class.forName(
             // // "org.apache.commons.logging.Log"
@@ -1456,10 +1528,12 @@ public class DoRemoJobs {
 
             for (Failure failure : result.getFailures()) {
                 logger.warning(failure.toString());
+//                logger.warn(failure.toString());
             }
 
         } catch (ClassNotFoundException e) {
             logger.severe("Couldn't find test class to load");
+//            logger.error("Couldn't find test class to load");
             // e.printStackTrace();
             throw e;
         }

@@ -386,7 +386,7 @@ public class DoRemoJobs {
         // logger.info("BUILD - bin content AFTER");
         // listFilesInDirectory(binPath);
 
-        analyzeSctFile(currentIProject);
+        checkForbiddenElementsInStatechart(currentIProject, neptunCode);
 
         // logger.info("TESTING - bin content BEFORE");
         // listFilesInDirectory(binPath);
@@ -708,7 +708,7 @@ public class DoRemoJobs {
                 // logger.info("BUILD - bin content AFTER");
                 // listFilesInDirectory(binPath);
 
-                analyzeSctFile(remoProject);
+                checkForbiddenElementsInStatechart(remoProject, "ASDASD");
 
                 // logger.info("TESTING - bin content BEFORE");
                 // listFilesInDirectory(binPath);
@@ -1331,6 +1331,17 @@ public class DoRemoJobs {
         IProject project = getProject(bundleName);
         IFile file = project.getFile(sctFilePathInBundle);
         Statechart statechartFromIFile = StatechartAnalyzer.getStatechartFromIFile(file);
+        
+        if (statechartFromIFile == null) {
+            throw new Exception("Statechart could not be parsed from the file at path '"
+                    + file.getRawLocationURI().getPath() + "'!");
+        }
+        return statechartFromIFile;
+    }
+    
+    public Statechart getStatechartFromIProject(IProject project, String sctFilePathInIProject) throws Exception {
+        IFile file = project.getFile(sctFilePathInIProject);
+        Statechart statechartFromIFile = StatechartAnalyzer.getStatechartFromIFile(file);
 
         if (statechartFromIFile == null) {
             throw new Exception("Statechart could not be parsed from the file at path '"
@@ -1344,8 +1355,11 @@ public class DoRemoJobs {
     // return StatechartAnalyzer.getStatechartFromIFile(sctFile);
     // }
 
-    public boolean analyzeSctFile(IProject currentIProject) {
-        return true;
+    public void checkForbiddenElementsInStatechart(IProject currentIProject, String neptunCode) throws Exception {
+        Statechart statechartFromIProject = getStatechartFromIProject(currentIProject, "./homework"+neptunCode+"."+SCT_FILE_EXTENSION); // example: homeworkABC123.sct
+        StatechartAnalyzer sta = new StatechartAnalyzer();
+        sta.setStatechart(statechartFromIProject);
+        sta.checkForbiddenElements();
     }
 
     public org.junit.runner.Result testStatechart(IProject currentIProject) throws Exception {

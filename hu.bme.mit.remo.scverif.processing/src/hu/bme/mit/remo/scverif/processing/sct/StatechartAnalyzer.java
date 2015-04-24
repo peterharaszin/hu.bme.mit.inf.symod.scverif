@@ -138,6 +138,14 @@ public class StatechartAnalyzer {
         }
     }
     
+    public void checkForbiddenElements() throws ForbiddenElementException{
+        // always/oncycle keywords are forbidden
+        ArrayList<ReactionTriggerImpl> reactionTriggers = getReactionTriggers();
+        for (ReactionTriggerImpl reactionTriggerImpl : reactionTriggers) {
+            checkReactionTrigger(reactionTriggerImpl);
+        }
+    }
+    
     /**
      * Check if the current statechart has an EventDefinition with the name passed as a parameter.
      * 

@@ -103,19 +103,9 @@ public class DoRemoJobs {
     private static final String testCompiledClassFileFullPathInIProject = testCompiledClassFolderPathInIProject
             + testClassName + ".class";
 
-//    private FileHandler logFilehandler;
-    //
-    // private IProject remoProject;
-
     private Shell parentActiveShell;
     private IWorkspaceRoot workspaceRoot;
     private IWorkspace workspace;
-    // the root directory of the projects - we assume that ALL the to-be-checked
-    // projects are in the same directory
-    //    private static URI projectsRootDirectory;
-    //    private static Path projectsRootDirectoryPath;
-    // CSV target path
-    //    private static Path CSV_targetFilePath;    
 
     // Delimiter used in CSV file
     private static final String CSV_COMMA_DELIMITER = ";";
@@ -223,9 +213,7 @@ public class DoRemoJobs {
             logger.info("projectName: '" + projectName + "'");
             if (matcher.find()) {
                 String neptunCode = matcher.group(1);
-                //                if(DoRemoJobs.hasRequiredProjectNatures(iProject)){
                 matchingIProjects.put(neptunCode, iProject);
-                //                }
             } else {
                 logger.info("Ignoring project called '" + projectName + "' at '" + iProject.getRawLocationURI()
                         + "', because it does not match the following regular expression: " + projectRegex);
@@ -273,8 +261,6 @@ public class DoRemoJobs {
      * @return
      * @throws IOException
      */
-    // public boolean copySctFile(Entry<String, IProject> currentEntry) throws
-    // IOException {
     public boolean copySctFile(Path sourcePath, String neptunCode, IProject iProject) throws IOException {
         // String neptunCode = currentEntry.getKey();
         // IProject iProject = currentEntry.getValue();
@@ -1350,11 +1336,6 @@ public class DoRemoJobs {
         return statechartFromIFile;
     }
 
-    // public Statechart getStatechartFromBundle() {
-    // IFile sctFile = remoProject.getFile(sctFilePathInBundle);
-    // return StatechartAnalyzer.getStatechartFromIFile(sctFile);
-    // }
-
     public void checkForbiddenElementsInStatechart(IProject currentIProject, String neptunCode) throws Exception {
         Statechart statechartFromIProject = getStatechartFromIProject(currentIProject, "./homework"+neptunCode+"."+SCT_FILE_EXTENSION); // example: homeworkABC123.sct
         StatechartAnalyzer sta = new StatechartAnalyzer();
@@ -1364,73 +1345,9 @@ public class DoRemoJobs {
 
     public org.junit.runner.Result testStatechart(IProject currentIProject) throws Exception {
         logger.info("Executing tests");
-        // Statechart statechartFromIFile = getStatechartFromBundle();
-
-        // IFile jUnitTestFile =
-        // remoProject.getFile(testCompiledFilePathInIProject);
-        // boolean testFileExists = jUnitTestFile.exists();
-        // URI testFileRawLocationURI = jUnitTestFile.getRawLocationURI();
-
-        // logger.info("Executing test from file at '" + testFileRawLocationURI
-        // + "' ('" + jUnitTestFile.getFullPath().toString() + "')...");
-        // logger.info("testFileExists: " + testFileExists);
-        //
-        // if (!testFileExists) {
-        // throw new Exception("The test file at '" + testFileRawLocationURI
-        // + "' does not exist!");
-        // }
-
-        // logger.info("testFileRawLocationURI.getRawPath(): "
-        // + testFileRawLocationURI.getRawPath());
-        // logger.info("testFileRawLocationURI.getPath(): "
-        // + testFileRawLocationURI.getPath());
-        // logger.info("testFileRawLocationURI.toString(): "
-        // + testFileRawLocationURI.toString());
-        // logger.info("testFileRawLocationURI.toURL().getPath(): "
-        // + testFileRawLocationURI.toURL().getPath());
-        // logger.info("testFileRawLocationURI.resolve('..').resolve('..'): "
-        // + testFileRawLocationURI.resolve("..").resolve("..").toString());
-
-        // JavaCompiler systemJavaCompiler =
-        // ToolProvider.getSystemJavaCompiler();
-        // if (systemJavaCompiler == null) {
-        // String javaHomeProperty = System.getProperty("java.home");
-        // //
-        // http://stackoverflow.com/questions/2543439/null-pointer-exception-while-using-java-compiler-api/10944833#10944833
-        // System.err
-        // .println("You are using JRE instead of JDK. Your JAVA_HOME is currently set to '"
-        // + javaHomeProperty + "'");
-        // throw new Exception(
-        // "You are using JRE instead of JDK. Your JAVA_HOME is currently set to '"
-        // + javaHomeProperty
-        // +
-        // "'. Please set the JRE System Library execution environment in Eclipse's settings to the path of the JDK for the testing to work.");
-        // }
-
-        // String testFileLocation =
-        // jUnitTestFile.getRawLocationURI().getPath();
 
         IFolder binFolder = currentIProject.getFolder("bin");
-        // IFolder binFolder =
-        // currentIProject.getFolder(testCompiledClassFolderPathInIProject);
         String binDirectory = binFolder.getRawLocationURI().getPath();
-
-        // List<String> options = Arrays.asList("-d", "./bin/",
-        // testFileLocation);
-        // http://stackoverflow.com/questions/13075370/dynamically-retrieving-junit-class
-        // List<String> arguments = Arrays.asList("-d", binDirectory,
-        // testFileLocation);
-
-        logger.info("binDirectory (String): " + binDirectory);
-        // logger.info("options: " + arguments);
-
-        // int compilationResult = systemJavaCompiler.run(null, null, null,
-        // arguments.toArray(new String[arguments.size()]));
-
-        // if (compilationResult == 0) {
-        // logger.info("Compilation was successful");
-
-        // String testClassName = "MyTest"; // "com.example.tests.blabla"
 
         // bin-könyvtár elérési útja
         File binDirectoryAsFile = new File(binDirectory);
@@ -1443,14 +1360,9 @@ public class DoRemoJobs {
         Path testCompiledClassToLoadPath = currentIFolderAsPath.resolve(testClassName + ".class");
 
         boolean classFileExists_1 = Files.exists(testCompiledClassToLoadPath);
-
-        // boolean classFileExists = new File(binDirectoryAsFile,
-        // testClassName+".class").exists();
         boolean classFileExists_2 = new File(binDirectoryAsFile, testFullClassNameWithPackage.replace(".", "/")
                 + ".class").exists();
 
-        // logger.info("does the bin/" + testClassName + ".class + exist?: " +
-        // classFileExists_2);
         logger.info("does the " + testCompiledClassFileFullPathInIProject + " exist?: " + classFileExists_2);
 
         if (!classFileExists_1) {
@@ -1467,30 +1379,8 @@ public class DoRemoJobs {
 
         try {
             url = binDirectoryAsFile.toURI().toURL();
-            // logger.info("binDirectoryAsFile.toURI().toURL(): " + url);
-            // logger.info("binDirectoryAsFile.toURI().toURL().getPath(): " +
-            // url.getPath());
-
-            // logger.info("Printing out the current classpath:");
-            // //
-            // http://www.mkyong.com/java/how-to-print-out-the-current-project-classpath/
-            // ClassLoader cl = ClassLoader.getSystemClassLoader();
-            //
-            // URL[] urls = ((URLClassLoader) cl).getURLs();
-            //
-            // for (URL myUrl : urls) {
-            // System.out.println(myUrl.getFile());
-            // }
-            //
-            // String classpath = System.getProperty("java.class.path");
-            //
-            // logger.info("classpath:\n" + classpath);
-            // logger.info("===================================");
-
         } catch (MalformedURLException e) {
-            logger.severe("Error with file location (URL)");
-//            logger.error("Error with file location (URL)");
-            // e.printStackTrace();
+            logger.severe("Error with file location (URL) (binDirectoryAsFile: "+binDirectoryAsFile.getAbsolutePath()+")");
             throw e;
         }
 
@@ -1501,8 +1391,6 @@ public class DoRemoJobs {
         // majd átnézni:
         // http://www.coderanch.com/t/633874/java/java/Unload-Reload-Dymnically-Loaded-Class
         try (URLClassLoader myURLClassLoader = new URLClassLoader(urls, JUnitCore.class.getClassLoader())) {
-            // Class<?> classForName = Class.forName(testClassName, true,
-            // myURLClassLoader);
 
             logger.info("myURLClassLoader urls:");
             for (URL myURLClassLoaderUrl : myURLClassLoader.getURLs()) {
@@ -1514,23 +1402,7 @@ public class DoRemoJobs {
             // java.util.concurrent.TimeUnit.SECONDS.sleep(2);
             // logger.info("continuing...");
 
-            // Class<?> myclass = Class.forName(
-            // // "org.apache.commons.logging.Log"
-            // // testClassName
-            // testFullClassNameWithPackage
-            // , false, myURLClassLoader);
-
-            // logger.info("myclass.getProtectionDomain().getCodeSource().getLocation().toString(): "
-            // +
-            // myclass.getProtectionDomain().getCodeSource().getLocation().toString());
-
-            // old one
-
             Class<?> loadClassResult = myURLClassLoader.loadClass(testFullClassNameWithPackage);
-
-            // System.out.println(loadClassResult.getDeclaredMethods().length);
-            // Object o = loadClassResult.newInstance();
-
             result = JUnitCore.runClasses(loadClassResult);
 
             // http://junit.sourceforge.net/javadoc/org/junit/runner/Result.html#getRunCount()
@@ -1547,54 +1419,9 @@ public class DoRemoJobs {
 
         } catch (ClassNotFoundException e) {
             logger.severe("Couldn't find test class to load");
-//            logger.error("Couldn't find test class to load");
-            // e.printStackTrace();
             throw e;
         }
 
-        // } else {
-        // throw new Exception("Compilation failed!");
-        // }
-
-        // org.junit.runner.JUnitCore junit1 = new org.junit.runner.JUnitCore();
-        // org.junit.runner.Result result1 = junit1.run(SctTest.class);
-
-        // TreeIterator<EObject> eAllContents =
-        // statechart.eAllContents();
-        // StatechartAnalyzer stateChartAnalyzer = new StatechartAnalyzer(
-        // statechartFromIFile);
-        // stateChartAnalyzer.processStatechart();
-        // org.junit.runner.JUnitCore.main("junitfaq.SimpleTest");
-        // .
-        // http://stackoverflow.com/questions/2543912/how-do-i-run-junit-tests-from-inside-my-java-application/2562575#2562575
-        // org.junit.runner.JUnitCore junit = new org.junit.runner.JUnitCore();
-        // org.junit.runner.Result result = junit.run(SctTest.class);
-        // // org.junit.runner.Result result =
-        // JUnitCore.runClasses(SctTest.class);
-        // boolean wasSuccessful = result.wasSuccessful();
-        //
-        // int failureCount = result.getFailureCount();
-        // int runCount = result.getRunCount();
-        // logger.info("wasSuccessful: " + wasSuccessful);
-        // logger.info("failureCount: " + failureCount);
-        // logger.info("runCount: " + runCount);
-        // logger.info("result.getFailures().toString(): "
-        // + result.getFailures().toString());
-        //
-        // if (failureCount > 0) {
-        // String problems = "";
-        // for (Failure failure : result.getFailures()) {
-        // problems.concat(failure.getMessage() + " (descr.: "
-        // + failure.getDescription() + "). failure.toString(): "
-        // + failure.toString());
-        // }
-        //
-        // throw new Exception(
-        // "The SCT file has not passed the test! Problems while analyzing the file: \n"
-        // + problems);
-        // }
-        //
-        // return (failureCount == 0);
         return result;
     }
 }

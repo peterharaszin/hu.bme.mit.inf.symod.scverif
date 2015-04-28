@@ -18,6 +18,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.yakindu.sct.model.sgraph.Statechart;
+import org.yakindu.sct.model.sgraph.impl.StatechartImpl;
 import org.yakindu.sct.model.sgraph.impl.TransitionImpl;
 import org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl;
 
@@ -59,32 +60,36 @@ public class SCTAnalyzeHandler extends AbstractHandler {
         for (EObject content : res.getContents()) {
             // EObject content = res.getContents().get(0);
             // if it's an implementation of the model object 'Statechart'.
-            if (content instanceof org.yakindu.sct.model.sgraph.impl.StatechartImpl) {
+            if (content instanceof StatechartImpl) {
                 Statechart statechart = (Statechart) content;
                 // TreeIterator<EObject> eAllContents =
                 // statechart.eAllContents();
                 StatechartAnalyzer stateChartAnalyzer = new StatechartAnalyzer(statechart);
                 stateChartAnalyzer.processStatechart();
-                
+
                 Logger logger = DoRemoJobs.logger;
-                
+
                 logger.info("getting interfaces... (dirty test)");
-                
+
                 ArrayList<InterfaceScopeImpl> interfaces = stateChartAnalyzer.getInterfaces();
-                for (InterfaceScopeImpl interfaceScopeImpl : interfaces) {
-                    logger.info("current interface's name: '"+interfaceScopeImpl.getName()+"'");
+                if (interfaces == null) {
+                    logger.info("There is no interface in the model");
+                } else {
+                    for (InterfaceScopeImpl interfaceScopeImpl : interfaces) {
+                        logger.info("current interface's name: '" + interfaceScopeImpl.getName() + "'");
+                    }
                 }
 
-                // TODO: it was just a test!
-                String anotherSpecification = "/*************************\n" + "   Interfaces of the chess clock\n"
-                        + "   Do not modify!\n" + " *************************/\n" + "interface Buttons:\n"
-                        + "in event button\n" + "\n" + "interface Display:\n" + "var text:string = \"Initial text\"\n"
-                        + "\n" + " internal:\n" + "/*************************\n"
-                        + "   Insert additional variables here:\n" + " *************************/\n" + " \n"
-                        + "// var myExampleInteger: integer\n" + "// var myExampleText: string\n";
-                boolean interfaceSpecificationEquals = stateChartAnalyzer
-                        .interfaceSpecificationEqualsTo(anotherSpecification);
-                System.out.println("interfaceSpecificationEquals: " + interfaceSpecificationEquals);
+//                // TODO: it was just a test!
+//                String anotherSpecification = "/*************************\n" + "   Interfaces of the chess clock\n"
+//                        + "   Do not modify!\n" + " *************************/\n" + "interface Buttons:\n"
+//                        + "in event button\n" + "\n" + "interface Display:\n" + "var text:string = \"Initial text\"\n"
+//                        + "\n" + " internal:\n" + "/*************************\n"
+//                        + "   Insert additional variables here:\n" + " *************************/\n" + " \n"
+//                        + "// var myExampleInteger: integer\n" + "// var myExampleText: string\n";
+//                boolean interfaceSpecificationEquals = stateChartAnalyzer
+//                        .interfaceSpecificationEqualsTo(anotherSpecification);
+//                System.out.println("interfaceSpecificationEquals: " + interfaceSpecificationEquals);
             }
             // if (content instanceof org.eclipse.gmf.runtime.notation.impl.DiagramImpl) {
             //     // ez nem fog kelleni...
@@ -94,7 +99,7 @@ public class SCTAnalyzeHandler extends AbstractHandler {
         MessageDialog.openInformation(shell, "Info (Pete)",
                 "(TEMP MESSAGE) Please look at the console for inspecting the iteration of the statechart...");
     }
-    
+
     /**
      * Returns the selected SCT file or null if no SCT file has been selected
      * 
@@ -121,7 +126,8 @@ public class SCTAnalyzeHandler extends AbstractHandler {
         Object firstElement = (currentSelectionStructured != null) ? currentSelectionStructured.getFirstElement()
                 : null;
 
-        if (firstElement != null && firstElement.getClass().getTypeName() == fileTypeClass) {
+        //        if (firstElement != null && firstElement.getClass().getTypeName() == fileTypeClass) {
+        if (firstElement != null && firstElement instanceof IFile) {
             IFile file = (IFile) firstElement;
             String fileExtension = file.getFileExtension();
             return (DoRemoJobs.SCT_FILE_EXTENSION.equals(fileExtension) ? file : null);

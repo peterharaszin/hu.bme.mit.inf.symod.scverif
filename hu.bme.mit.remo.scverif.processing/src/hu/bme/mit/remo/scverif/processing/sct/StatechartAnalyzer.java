@@ -38,7 +38,9 @@ import org.yakindu.sct.model.sgraph.impl.StateImpl;
 import org.yakindu.sct.model.sgraph.impl.TransitionImpl;
 import org.yakindu.sct.model.stext.stext.AlwaysEvent;
 import org.yakindu.sct.model.stext.stext.EventSpec;
+import org.yakindu.sct.model.stext.stext.InterfaceScope;
 import org.yakindu.sct.model.stext.stext.ReactionTrigger;
+import org.yakindu.sct.model.stext.stext.TimeEventSpec;
 import org.yakindu.sct.model.stext.stext.impl.EventDefinitionImpl;
 import org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl;
 import org.yakindu.sct.model.stext.stext.impl.OperationDefinitionImpl;
@@ -65,7 +67,6 @@ public class StatechartAnalyzer {
     }
 
     public StatechartAnalyzer(Statechart statechart) {
-//        this.statechart = statechart;
         setStatechart(statechart);
     }
 
@@ -92,7 +93,7 @@ public class StatechartAnalyzer {
 
     public boolean doesContainTimeEventReactionTrigger() {
         temporaryStringBuilder.append("Does it contain a ReactionTrigger which is an instance of a time event?\n");
-
+        
         TreeIterator<EObject> eAllContents = statechart.eAllContents();
         while (eAllContents.hasNext()) {
             EObject nextEObject = eAllContents.next();
@@ -124,18 +125,18 @@ public class StatechartAnalyzer {
                 modelElementsCollector.put(nextEObjectClass, elementList);
             }
 
-            temporaryStringBuilder.append("adding: "+nextEObject.toString() + "\n");
+            // temporaryStringBuilder.append("adding: "+nextEObject.toString() + "\n");
             
             elementList.add(nextEObject);
         }
         
         temporaryStringBuilder.append("\n\n");
 
-        ArrayList<? extends EObject> interfaceList = modelElementsCollector.get(org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl.class);
-        for (EObject currentInterfaceEObject : interfaceList) {
-            org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl currentInterface = (org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl) currentInterfaceEObject;
-            temporaryStringBuilder.append("currentInterface.getName(): " + currentInterface.getName()+"\n");
-        }
+//        ArrayList<? extends EObject> interfaceList = modelElementsCollector.get(org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl.class);
+//        for (EObject currentInterfaceEObject : interfaceList) {
+//            org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl currentInterface = (org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl) currentInterfaceEObject;
+//            temporaryStringBuilder.append("currentInterface.getName(): " + currentInterface.getName()+"\n");
+//        }
     }
     
     public void checkForbiddenElements() throws ForbiddenElementException{
@@ -143,7 +144,7 @@ public class StatechartAnalyzer {
         ArrayList<ReactionTriggerImpl> reactionTriggers = getReactionTriggers();
         for (ReactionTriggerImpl reactionTriggerImpl : reactionTriggers) {
             checkReactionTrigger(reactionTriggerImpl);
-        }
+        }        
     }
     
     /**
@@ -467,10 +468,15 @@ public class StatechartAnalyzer {
      * @see org.yakindu.sct.model.stext.stext.StextPackage#getAlwaysEvent()
      */
     public void checkReactionTrigger(ReactionTrigger reactionTrigger) throws ForbiddenElementException {
-        for (EventSpec eventSpec : reactionTrigger.getTriggers()) {
+        EList<EventSpec> triggers = reactionTrigger.getTriggers();
+        if(triggers == null || triggers.isEmpty()){
+            throw new ForbiddenElementException("Trigger can not be empty!");
+        }
+        
+        for (EventSpec eventSpec : triggers) {
             // Do not allow oncycle and always as event for reactions.
             if (eventSpec instanceof AlwaysEvent) {
-                throw new ForbiddenElementException("The usage of always/oncycle keyword is forbidden!");
+                throw new ForbiddenElementException("The usage of always/oncycle keyword (or triggerless transitions) is forbidden!");
             }
         }
     }    
@@ -485,13 +491,19 @@ public class StatechartAnalyzer {
 
         String nameOfStatechart = statechart.getName();
 
+        
+        
         String specification = statechart.getSpecification();
         temporaryStringBuilder.append("statechart.getName(): \n" + nameOfStatechart + "\n");
         temporaryStringBuilder.append("statechart.getSpecification(): \n" + specification + "\n");
         temporaryStringBuilder.append("iterating through '" + nameOfStatechart + "' statechart.getRegions():\n");
 
+        temporaryStringBuilder.append("checkScopes(): ");
+        checkScopes();
+                
         EList<Region> regions = statechart.getRegions();
         for (Region region : regions) {
+            
             String regionName = region.getName();
             temporaryStringBuilder.append("current region's name: '" + regionName + "'\n");
             EList<Vertex> vertices = region.getVertices();
@@ -555,21 +567,18 @@ public class StatechartAnalyzer {
         }
         temporaryStringBuilder.append("		trigger.getClass().getName();: '" + trigger.getClass().getName() + "' \n");
         EList<EObject> eContents = trigger.eContents();
-        for (EObject eObject : eContents) {
-            System.out.println("eObject.toString(): " + eObject.toString());
-            System.out.println("eObject.eClass().getClass().getName(): " + eObject.eClass().getClass().getName());
-        }
+//        for (EObject eObject : eContents) {
+//            System.out.println("eObject.toString(): " + eObject.toString());
+//            System.out.println("eObject.eClass().getClass().getName(): " + eObject.eClass().getClass().getName());
+//        }
         // org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl
         TreeIterator<EObject> eAllContents = trigger.eAllContents();
         while (eAllContents.hasNext()) {
             EObject eObject = eAllContents.next();
-            System.out.println("eObject.toString(): " + eObject.toString());
-            System.out.println("eObject.getClass().getName(): " + eObject.getClass().getName());
-            boolean isContainingTimeEvent = (eObject.getClass()
-                    .getName() == "org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl");
-            System.out.println(
-                    "eObject.getClass().getName() == 'org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl': "
-                            + isContainingTimeEvent);
+            boolean isContainingTimeEvent = (eObject instanceof TimeEventSpec);
+            if(isContainingTimeEvent){
+                System.out.println("eObject instanceof TimeEventSpec: " + isContainingTimeEvent);
+            }
         }
     }
 
@@ -583,7 +592,7 @@ public class StatechartAnalyzer {
     }
 
     public void processScope(Scope scope) {
-        temporaryStringBuilder.append("scope.eClass().getName(): \n" + scope.eClass().getName() + "\n");
+        temporaryStringBuilder.append("scope.eClass().getName(): '" + scope.eClass().getName() + "'\n");
         EList<Variable> interfaceVariables = scope.getVariables();
 
         for (Variable variable : interfaceVariables) {
@@ -672,9 +681,28 @@ public class StatechartAnalyzer {
     public void setStatechart(Statechart statechart) {
         this.statechart = statechart;
         temporaryStringBuilder.setLength(0);
-        collectModelElementsIntoMap();
+        collectModelElementsIntoMap();      
     }
 
+    public void checkScopes(){
+        temporaryStringBuilder.append("checkScopes:\n");
+        EList<Scope> scopes = statechart.getScopes();
+        
+//        EList<Reaction> reactions = statechart.getReactions();
+//        for (Reaction reaction : reactions) {
+//            checkReactionTrigger(reactionTrigger);
+//        }
+        
+        for (Scope scope : scopes) {
+            if (scope instanceof InterfaceScope) {
+                InterfaceScope iScope = (InterfaceScope) scope;
+                temporaryStringBuilder.append("iScope.getName(): "+iScope.getName()+"\n");
+                temporaryStringBuilder.append("iScope.getEvents(): "+iScope.getEvents()+"\n");
+                temporaryStringBuilder.append("iScope.getVariables(): "+iScope.getVariables()+"\n");
+            }
+        }        
+    }
+    
     /**
      * Chcek whether the provided interface equals to the statechart's original interface
      * 

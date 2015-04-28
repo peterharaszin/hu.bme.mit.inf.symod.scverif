@@ -6,6 +6,7 @@ package hu.bme.mit.remo.scverif.processing.sct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
@@ -139,12 +140,16 @@ public class StatechartAnalyzer {
 //        }
     }
     
-    public void checkForbiddenElements() throws ForbiddenElementException{
+    public LinkedList<ForbiddenElement> checkForbiddenElements() {
+        LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
+        
         // always/oncycle keywords are forbidden
         ArrayList<ReactionTriggerImpl> reactionTriggers = getReactionTriggers();
         for (ReactionTriggerImpl reactionTriggerImpl : reactionTriggers) {
-            checkReactionTrigger(reactionTriggerImpl);
-        }        
+            forbiddenElementList.addAll(checkReactionTrigger(reactionTriggerImpl));
+        }
+        
+        return forbiddenElementList;
     }
     
     /**
@@ -463,22 +468,27 @@ public class StatechartAnalyzer {
      * 
      * @see https://code.google.com/a/eclipselabs.org/p/yakindu/source/browse/SCT2/trunk/plugins/org.yakindu.sct.model.stext/src/org/yakindu/sct/model/stext/SText.xtext#156
      * 
-     * @throws ForbiddenElementException 
+     * @throws ForbiddenElement 
      * @see http://yakindu.eclipselabs.org.codespot.com/svn-history/r2842/SCT2/trunk/plugins/org.yakindu.sct.model.stext/src/org/yakindu/sct/model/stext/validation/STextJavaValidator.java
      * @see org.yakindu.sct.model.stext.stext.StextPackage#getAlwaysEvent()
      */
-    public void checkReactionTrigger(ReactionTrigger reactionTrigger) throws ForbiddenElementException {
+    public LinkedList<ForbiddenElement> checkReactionTrigger(ReactionTrigger reactionTrigger) {
         EList<EventSpec> triggers = reactionTrigger.getTriggers();
+        
+        LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
+        
         if(triggers == null || triggers.isEmpty()){
-            throw new ForbiddenElementException("Trigger can not be empty!");
+            forbiddenElementList.add(new ForbiddenElement("Trigger can not be empty!"));
         }
         
         for (EventSpec eventSpec : triggers) {
             // Do not allow oncycle and always as event for reactions.
             if (eventSpec instanceof AlwaysEvent) {
-                throw new ForbiddenElementException("The usage of always/oncycle keyword (or triggerless transitions) is forbidden!");
+                forbiddenElementList.add(new ForbiddenElement("The usage of always/oncycle keyword (or triggerless transitions) is forbidden!"));
             }
         }
+        
+        return forbiddenElementList;
     }    
     
     /**
@@ -491,7 +501,20 @@ public class StatechartAnalyzer {
 
         String nameOfStatechart = statechart.getName();
 
+        LinkedList<ForbiddenElement> checkForbiddenElements = checkForbiddenElements();
+
+        temporaryStringBuilder.append("=========================\n");
+
+        temporaryStringBuilder.append("Checking forbidden elements...\n");
+        if(checkForbiddenElements == null){
+            temporaryStringBuilder.append("There were no forbidden elements\n");
+        } else {
+            for (ForbiddenElement forbiddenElement : checkForbiddenElements) {
+                temporaryStringBuilder.append(forbiddenElement.toString()+"\n");
+            }
+        }
         
+        temporaryStringBuilder.append("=========================\n");
         
         String specification = statechart.getSpecification();
         temporaryStringBuilder.append("statechart.getName(): \n" + nameOfStatechart + "\n");
@@ -532,7 +555,7 @@ public class StatechartAnalyzer {
         }
 
         temporaryStringBuilder
-                .append("does it contain time event reaction trigger? --> " + doesContainTimeEventReactionTrigger());
+                .append("does it contain time event reaction trigger? --> " + doesContainTimeEventReactionTrigger()+"\n");
         
         temporaryStringBuilder.append("collect and inspect model elements");
         collectModelElementsIntoMap();
@@ -559,12 +582,12 @@ public class StatechartAnalyzer {
     }
 
     private void processTrigger(Trigger trigger) {
-        try {
-            checkReactionTrigger((ReactionTrigger) trigger);
-        } catch (ForbiddenElementException e) {
-            temporaryStringBuilder.append("forbidden element has been found: " + e.getMessage() + "\n");
-//            e.printStackTrace();
+        LinkedList<ForbiddenElement> forbiddenElementList = checkReactionTrigger((ReactionTrigger) trigger);
+
+        for (ForbiddenElement forbiddenElement : forbiddenElementList) {
+            temporaryStringBuilder.append("forbidden element has been found: " + forbiddenElement.getMessage() + "\n");
         }
+        
         temporaryStringBuilder.append("		trigger.getClass().getName();: '" + trigger.getClass().getName() + "' \n");
         EList<EObject> eContents = trigger.eContents();
 //        for (EObject eObject : eContents) {

@@ -20,6 +20,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -68,9 +69,11 @@ import org.yakindu.sct.model.sgen.GeneratorEntry;
 import org.yakindu.sct.model.sgen.GeneratorModel;
 import org.yakindu.sct.model.sgraph.Statechart;
 
+import hu.bme.mit.remo.scverif.processing.sct.ForbiddenElement;
 import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
 import hu.bme.mit.remo.scverif.processing.sgen.YakinduGeneratorExecutorModified;
 import hu.bme.mit.remo.scverif.ui.BuildError;
+import hu.bme.mit.remo.scverif.ui.HomeworkResult;
 import hu.bme.mit.remo.scverif.ui.YakinduSCTFileNotFoundException;
 import hu.bme.mit.remo.scverif.ui.YakinduSGenFileNotFoundException;
 
@@ -336,7 +339,7 @@ public class DoRemoJobs {
      * @return
      * @throws Exception
      */
-    public org.junit.runner.Result runTestsOnProject(Path projectsRootDirectoryPath, String neptunCode,
+    public HomeworkResult runTestsOnProject(Path projectsRootDirectoryPath, String neptunCode,
             IProject currentIProject) throws Exception {
 
         org.eclipse.core.runtime.NullProgressMonitor nullProgressMonitor = new org.eclipse.core.runtime.NullProgressMonitor();
@@ -362,25 +365,18 @@ public class DoRemoJobs {
 
         copySctFile(projectsRootDirectoryPath, neptunCode, currentIProject);
 
-        // logger.info("CLEAN - bin content AFTER");
-        // listFilesInDirectory(binPath);
-
         checkBuildErrors(currentIProject);
         
         buildProject(currentIProject, nullProgressMonitor);
 
-        // logger.info("BUILD - bin content AFTER");
-        // listFilesInDirectory(binPath);
-
-        checkForbiddenElementsInStatechart(currentIProject, neptunCode);
-
-        // logger.info("TESTING - bin content BEFORE");
-        // listFilesInDirectory(binPath);
+        LinkedList<ForbiddenElement> forbiddenElementsInStatechart = checkForbiddenElementsInStatechart(currentIProject, neptunCode);
 
         Result result = testStatechart(currentIProject);
         
-        return result;
-
+        // TODO: feladatokat valahonnan beállítani
+        String tasks = "";
+        HomeworkResult homeworkResult = new HomeworkResult(neptunCode, forbiddenElementsInStatechart, result, tasks);
+        return homeworkResult;
     }
     
     public void checkBuildErrors(IProject project) throws CoreException, BuildError {
@@ -508,6 +504,8 @@ public class DoRemoJobs {
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Teszthibák");
             csvWriter.append(CSV_COMMA_DELIMITER);
+            csvWriter.append("Tiltott elemek");
+            csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Hibás tesztesetek száma");
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Ignorált tesztesetek száma");
@@ -536,10 +534,10 @@ public class DoRemoJobs {
                 // the number of tests run
                 int runCount = 0;
                 Exception testException = null;
-                Result testStatechartResult = null;
-
+                HomeworkResult homeworkResult = null;
+                
                 try {
-                    testStatechartResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode, currentIProject);
+                    homeworkResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode, currentIProject);
                 } catch (final Exception e) {
                     System.err.println("Problems occurred while trying to process the project called '"
                             + currentIProject.getName() + "' at '" + currentIProject.getRawLocationURI()
@@ -561,9 +559,7 @@ public class DoRemoJobs {
                     logger.info("End of statechart analyzation.");
                     String dateFormatColumn = csvSimpleDateFormatForColumn.format(new Date());
 
-                    // Dátum;Neptun-kód;Exception dobódott;Teszthibák;Hibás
-                    // tesztesetek száma;Ignorált tesztesetek száma;Összes
-                    // teszteset száma;Összegzés(Siker/hiba)
+                    // Dátum;Neptun-kód;Exception dobódott;Teszthibák;Tiltott elemek;Hibás tesztesetek száma;Ignorált tesztesetek száma;Összes teszteset száma;Összegzés(Siker/hiba)
                     csvWriter.append(dateFormatColumn);
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(neptunCode);
@@ -591,6 +587,8 @@ public class DoRemoJobs {
 
                     String testFailureText = "-";
 
+                    Result testStatechartResult = homeworkResult.getTestResult();
+                    
                     if (testStatechartResult != null) {
                         String testFailureMessages = "";
                         for (Failure failure : testStatechartResult.getFailures()) {
@@ -611,7 +609,20 @@ public class DoRemoJobs {
 
                     csvWriter.append(testFailureText);
                     csvWriter.append(CSV_COMMA_DELIMITER);
-
+                    
+                    String forbiddenElementsText = "";
+                    
+                    LinkedList<ForbiddenElement> staticAnalysisResult = homeworkResult.getStaticAnalysisResult();
+                    for (ForbiddenElement forbiddenElement : staticAnalysisResult) {
+                        if(!"".equals(forbiddenElementsText)){
+                            forbiddenElementsText += " | ";
+                        }
+                        forbiddenElementsText += forbiddenElement.getMessage();
+                    }
+                    
+                    csvWriter.append(forbiddenElementsText);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    
                     csvWriter.append("" + failureCount);
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append("" + ignoreCount);
@@ -694,7 +705,7 @@ public class DoRemoJobs {
                 // logger.info("BUILD - bin content AFTER");
                 // listFilesInDirectory(binPath);
 
-                checkForbiddenElementsInStatechart(remoProject, "ASDASD");
+                LinkedList<ForbiddenElement> checkForbiddenElementsInStatechart = checkForbiddenElementsInStatechart(remoProject, "ASDASD");
 
                 // logger.info("TESTING - bin content BEFORE");
                 // listFilesInDirectory(binPath);
@@ -1336,11 +1347,11 @@ public class DoRemoJobs {
         return statechartFromIFile;
     }
 
-    public void checkForbiddenElementsInStatechart(IProject currentIProject, String neptunCode) throws Exception {
+    public LinkedList<ForbiddenElement> checkForbiddenElementsInStatechart(IProject currentIProject, String neptunCode) throws Exception {
         Statechart statechartFromIProject = getStatechartFromIProject(currentIProject, "./homework"+neptunCode+"."+SCT_FILE_EXTENSION); // example: homeworkABC123.sct
         StatechartAnalyzer sta = new StatechartAnalyzer();
         sta.setStatechart(statechartFromIProject);
-        sta.checkForbiddenElements();
+        return sta.checkForbiddenElements();
     }
 
     public org.junit.runner.Result testStatechart(IProject currentIProject) throws Exception {

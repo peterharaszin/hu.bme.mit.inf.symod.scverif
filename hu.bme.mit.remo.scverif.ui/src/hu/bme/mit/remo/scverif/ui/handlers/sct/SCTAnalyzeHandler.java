@@ -18,17 +18,21 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.yakindu.sct.model.sgraph.Statechart;
-import org.yakindu.sct.model.sgraph.impl.StatechartImpl;
-import org.yakindu.sct.model.sgraph.impl.TransitionImpl;
-import org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl;
+import org.yakindu.sct.model.stext.stext.InterfaceScope;
 
 import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
 import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
 
+/**
+ * Handler for analyzing the selected SCT file
+ * 
+ * @author Peter Haraszin
+ *
+ */
 public class SCTAnalyzeHandler extends AbstractHandler {
 
     /**
-     * végrehajtás... ez a kötelező metódus
+     * Execute the analyzations
      */
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -60,7 +64,7 @@ public class SCTAnalyzeHandler extends AbstractHandler {
         for (EObject content : res.getContents()) {
             // EObject content = res.getContents().get(0);
             // if it's an implementation of the model object 'Statechart'.
-            if (content instanceof StatechartImpl) {
+            if (content instanceof Statechart) {
                 Statechart statechart = (Statechart) content;
                 // TreeIterator<EObject> eAllContents =
                 // statechart.eAllContents();
@@ -71,12 +75,12 @@ public class SCTAnalyzeHandler extends AbstractHandler {
 
                 logger.info("getting interfaces... (dirty test)");
 
-                ArrayList<InterfaceScopeImpl> interfaces = stateChartAnalyzer.getInterfaces();
+                ArrayList<InterfaceScope> interfaces = stateChartAnalyzer.getInterfaces();
                 if (interfaces == null) {
                     logger.info("There is no interface in the model");
                 } else {
-                    for (InterfaceScopeImpl interfaceScopeImpl : interfaces) {
-                        logger.info("current interface's name: '" + interfaceScopeImpl.getName() + "'");
+                    for (InterfaceScope interfaceScope : interfaces) {
+                        logger.info("current interface's name: '" + interfaceScope.getName() + "'");
                     }
                 }
 
@@ -116,8 +120,6 @@ public class SCTAnalyzeHandler extends AbstractHandler {
 
         // 1st try:
 
-        String fileTypeClass = "org.eclipse.core.internal.resources.File";
-
         // Return the active menu selection. The active menu is a registered context menu; 
         // we pass the execution event that contains the application context		
         ISelection currentSelection = HandlerUtil.getActiveMenuSelection(event);
@@ -126,7 +128,7 @@ public class SCTAnalyzeHandler extends AbstractHandler {
         Object firstElement = (currentSelectionStructured != null) ? currentSelectionStructured.getFirstElement()
                 : null;
 
-        //        if (firstElement != null && firstElement.getClass().getTypeName() == fileTypeClass) {
+        //        if (firstElement != null && firstElement.getClass().getTypeName() == "org.eclipse.core.internal.resources.File") {
         if (firstElement != null && firstElement instanceof IFile) {
             IFile file = (IFile) firstElement;
             String fileExtension = file.getFileExtension();

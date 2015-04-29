@@ -21,14 +21,15 @@ import org.yakindu.sct.model.sgen.GeneratorEntry;
 import org.yakindu.sct.model.sgen.GeneratorModel;
 
 /**
- * Yakindu generator without an IProgressMonitor
+ * Custom Yakindu GeneratorExecutor for indicating generating requests from code (not just from the UI)
  * 
- * @author Pete
+ * @author Peter Haraszin
  *
  */
 public class YakinduGeneratorExecutorModified extends GeneratorExecutor {
 
 	/**
+	 * Executing the Yakindu generator with using an injector
 	 * 
 	 * @param file
 	 * @throws Exception
@@ -89,6 +90,12 @@ public class YakinduGeneratorExecutorModified extends GeneratorExecutor {
 		return true;
 	}
 	
+	/**
+	 * Load the given resource with using an injector
+	 * 
+	 * @param file
+	 * @return
+	 */
 	public Resource loadResourceWithInjector(IFile file) {
 		// Initialization support for running Xtext languages without equinox extension registry
 		com.google.inject.Injector injector = new SGenStandaloneSetup().createInjectorAndDoEMFRegistration();

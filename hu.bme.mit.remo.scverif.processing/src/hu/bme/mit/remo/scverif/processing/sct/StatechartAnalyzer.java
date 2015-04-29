@@ -5,9 +5,7 @@ package hu.bme.mit.remo.scverif.processing.sct;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
@@ -18,13 +16,11 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.xtend.type.impl.java.JavaBeansMetaModel;
 import org.yakindu.base.expressions.expressions.impl.ElementReferenceExpressionImpl;
 import org.yakindu.base.expressions.expressions.impl.FeatureCallImpl;
 import org.yakindu.sct.model.sgraph.Declaration;
 import org.yakindu.sct.model.sgraph.Effect;
 import org.yakindu.sct.model.sgraph.Event;
-import org.yakindu.sct.model.sgraph.Pseudostate;
 import org.yakindu.sct.model.sgraph.Reaction;
 import org.yakindu.sct.model.sgraph.ReactionProperty;
 import org.yakindu.sct.model.sgraph.Region;
@@ -142,7 +138,7 @@ public class StatechartAnalyzer {
         //        }
     }
 
-    public LinkedList<ForbiddenElement> checkForbiddenElements() {
+    public LinkedList<ForbiddenElement> getForbiddenElements() {
         LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
 
         // always/oncycle keywords are forbidden
@@ -284,7 +280,7 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<InterfaceScopeImpl> getInterfaces() {
+    public ArrayList<InterfaceScope> getInterfaces() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(InterfaceScopeImpl.class);
     }
@@ -529,7 +525,7 @@ public class StatechartAnalyzer {
 
         String nameOfStatechart = statechart.getName();
 
-        LinkedList<ForbiddenElement> checkForbiddenElements = checkForbiddenElements();
+        LinkedList<ForbiddenElement> checkForbiddenElements = getForbiddenElements();
 
         temporaryStringBuilder.append("=========================\n");
 
@@ -617,7 +613,7 @@ public class StatechartAnalyzer {
         }
 
         temporaryStringBuilder.append("		trigger.getClass().getName();: '" + trigger.getClass().getName() + "' \n");
-        EList<EObject> eContents = trigger.eContents();
+        // EList<EObject> eContents = trigger.eContents();
         //        for (EObject eObject : eContents) {
         //            System.out.println("eObject.toString(): " + eObject.toString());
         //            System.out.println("eObject.eClass().getClass().getName(): " + eObject.eClass().getClass().getName());

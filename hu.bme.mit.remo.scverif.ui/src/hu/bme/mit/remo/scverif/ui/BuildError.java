@@ -1,5 +1,11 @@
 package hu.bme.mit.remo.scverif.ui;
 
+/**
+ * Exception to throw when there was any kind of build error on a project  
+ * 
+ * @author Peter Haraszin
+ *
+ */
 public class BuildError extends Exception {
 
 	public BuildError() {

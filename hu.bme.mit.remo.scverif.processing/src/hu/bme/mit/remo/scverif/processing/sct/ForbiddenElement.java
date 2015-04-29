@@ -1,8 +1,10 @@
 package hu.bme.mit.remo.scverif.processing.sct;
 
 /**
- * Forbidden element
- * @author Pete
+ * Class to instantiate when a forbidden element was found in the statechart.
+ * It contains a simple informative message about the found forbidden element.
+ * 
+ * @author Peter Haraszin
  *
  */
 public class ForbiddenElement {

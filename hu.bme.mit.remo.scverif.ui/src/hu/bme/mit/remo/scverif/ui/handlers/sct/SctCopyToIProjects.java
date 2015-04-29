@@ -5,8 +5,6 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 //import org.slf4j.Logger;
 
-import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
-
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
@@ -14,9 +12,16 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
+
+/**
+ * Handler for copying the SCT file to the appropriate project (if any) in the workspace
+ *  
+ * @author Peter Haraszin
+ *
+ */
 public class SctCopyToIProjects extends AbstractHandler {
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
@@ -26,7 +31,7 @@ public class SctCopyToIProjects extends AbstractHandler {
         // Return the active shell. Is not necessarily the active workbench
         // window shell; we pass the execution event that contains the
         // application context
-        Shell shell = HandlerUtil.getActiveShell(event);
+        // org.eclipse.swt.widgets.Shell shell = HandlerUtil.getActiveShell(event);
         ISelection activeMenuSelection = HandlerUtil.getActiveMenuSelection(event);
         IStructuredSelection activeMenuStructuredSelection = (IStructuredSelection) activeMenuSelection;
 

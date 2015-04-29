@@ -6,6 +6,12 @@ import org.junit.runner.Result;
 
 import hu.bme.mit.remo.scverif.processing.sct.ForbiddenElement;
 
+/**
+ * Container class for storing the result of a homework test
+ * 
+ * @author Peter Haraszin
+ *
+ */
 public class HomeworkResult {
     String tasks;
     String neptunCode;

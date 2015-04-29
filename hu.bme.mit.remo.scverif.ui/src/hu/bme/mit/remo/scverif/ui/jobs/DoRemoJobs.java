@@ -86,7 +86,7 @@ import hu.bme.mit.remo.scverif.ui.YakinduSGenFileNotFoundException;
  * 3. kód legenerálása az sct-fájl+sgen-fájl segítségével
  * 4. buildelés
  * 
- * @author Pete
+ * @author Peter Haraszin
  */
 public class DoRemoJobs {
     public static final String SCT_FILE_EXTENSION = "sct";
@@ -127,6 +127,9 @@ public class DoRemoJobs {
     private static final String projectRegex = "hu\\.bme\\.mit\\.inf\\.symod\\.(\\w{6})\\.homework";;
     private static final Pattern patternCompiled = Pattern.compile(projectRegex, Pattern.CASE_INSENSITIVE);
 
+    /**
+     * Setting the Logger
+     */
     static {
         java.util.logging.LogManager.getLogManager().reset();
         logger.addHandler(myConsoleHandler);
@@ -157,6 +160,11 @@ public class DoRemoJobs {
         }
     }
 
+    /**
+     * Constructor
+     * @param shell
+     * @throws Exception
+     */
     public DoRemoJobs(Shell shell) throws Exception {
         this.parentActiveShell = shell;
         // setLogger();
@@ -165,14 +173,14 @@ public class DoRemoJobs {
         workspaceRoot = workspace.getRoot();
     }
 
+    /**
+     * Get the root directory based on the project passed as a parameter
+     * - we assume that ALL the to-be-checked projects are in the very same directory!
+     * 
+     * @param iProject
+     * @return
+     */
     public Path getProjectRootDirectoryFromIProject(IProject iProject) {
-//        // going up one directory
-//        URI projectRawLocationURI = iProject.getRawLocationURI();
-//        // don't know why yet, but ".." goes up TWO directories
-//        URI projectsRootDirectoryURI = projectRawLocationURI.resolve(".");
-//        logger.info("projectRootDirectoryURI: " + projectsRootDirectoryURI);
-//        return Paths.get(projectsRootDirectoryURI);
-        
         // using rawLocation is not OK: http://stackoverflow.com/questions/20493654/why-does-iresource-getrawlocation-return-null-for-iproject/20494107#20494107
         // IPath location = iProject.getLocation();
         URI locationURI = iProject.getLocationURI();
@@ -248,7 +256,7 @@ public class DoRemoJobs {
 
     public void checkExistenceOfSGenFileInIProject(IProject project) throws YakinduSGenFileNotFoundException {
         logger.info("Checking if the sgen file exists in the project called '" + project.getName() + "' at '"
-                // + project.getRawLocationURI() + "'...");
+        // + project.getRawLocationURI() + "'...");
                 + project.getLocationURI() + "'...");
         IFile sgenFile = project.getFile(sgenFilePathInBundle);
         if (!sgenFile.exists()) {
@@ -285,8 +293,8 @@ public class DoRemoJobs {
         Path sctFilePathInRootDirectory = projectsRootDirectoryPath.resolve(sctFilename);
         logger.info("Checking if '" + sctFilename + "' exists in '" + sctFilePathInRootDirectory.toUri() + "'...");
         return Files.exists(sctFilePathInRootDirectory);
-    }    
-    
+    }
+
     /**
      * Copy the SCT file from one place to another
      * 
@@ -295,21 +303,21 @@ public class DoRemoJobs {
      * @return
      * @throws IOException
      */
-    public boolean copySctFile(Path sourcePath, String sctFileNameInRootDirectory, IProject iProject) throws IOException {
+    public boolean copySctFile(Path sourcePath, String sctFileNameInRootDirectory, IProject iProject)
+            throws IOException {
         // String neptunCode = currentEntry.getKey();
         // IProject iProject = currentEntry.getValue();
 
-        logger.info(
-                "Copying SCT file (project name: '" + iProject.getName() + "')...");
+        logger.info("Copying SCT file (project name: '" + iProject.getName() + "')...");
 
         Path statechartOriginalPath = sourcePath.resolve(sctFileNameInRootDirectory);
-        
-        if(!sctFileExistsInRootDirectory(sourcePath, sctFileNameInRootDirectory)){
+
+        if (!sctFileExistsInRootDirectory(sourcePath, sctFileNameInRootDirectory)) {
             return false;
         }
-        
+
         String statechartTargetFilename = "homework" + sctFileNameInRootDirectory;// e.g.
-                                                                          // "homeworkA3BC1G.sct"
+        // "homeworkA3BC1G.sct"
         // Path iProjectPath = Paths.get(iProject.getRawLocationURI());
         Path iProjectPath = Paths.get(iProject.getLocationURI());
         Path statechartTargetPath = iProjectPath.resolve(statechartTargetFilename);
@@ -382,11 +390,10 @@ public class DoRemoJobs {
             NullProgressMonitor nullProgressMonitor = new NullProgressMonitor();
 
             logger.info("Neptun: " + neptunCode + "; project name: " + currentIProject.getName() + ", location URI: "
-                    // + currentIProject.getRawLocationURI()
-                    + currentIProject.getLocationURI()
-                    );
+            // + currentIProject.getRawLocationURI()
+                    + currentIProject.getLocationURI());
 
-            String sctFileNameInRootDirectory = neptunCode + "." + SCT_FILE_EXTENSION; // e.g. "A3BC1G.sct"
+            String sctFileNameInRootDirectory = neptunCode + "." + SCT_FILE_EXTENSION;// e.g. "A3BC1G.sct"
 
             checkExistenceOfSGenFileInIProject(currentIProject);
 
@@ -412,7 +419,7 @@ public class DoRemoJobs {
 
                 buildProject(currentIProject, nullProgressMonitor);
 
-                forbiddenElementsInStatechart = checkForbiddenElementsInStatechart(currentIProject, neptunCode);
+                forbiddenElementsInStatechart = getForbiddenElementsInStatechart(currentIProject, neptunCode);
 
                 result = testStatechart(currentIProject);
             }
@@ -429,40 +436,75 @@ public class DoRemoJobs {
         return homeworkResult;
     }
 
+    /**
+     * Check for build errors in the project - throws an exception if it has any.
+     * 
+     * @param project
+     * @throws CoreException
+     * @throws BuildError
+     */
     public void checkBuildErrors(IProject project) throws CoreException, BuildError {
         logger.info("Checking build errors...");
 
         if (hasBuildErrors(project)) {
-            throw new BuildError("A build error occurred in the project called '" + project.getName() + "' (at '"
-                    // + project.getRawLocationURI() + "')!");
-                    + project.getLocationURI() + "')!");
+            String buildErrorsAsUserFriendlyMessage = getBuildErrorsAsUserFriendlyMessageInProject(project);
+            throw new BuildError("Build error: "
+                    // "A build error occurred in the project called '" + project.getName() + "'"
+                    // + " (at '" + project.getLocationURI() + "')"
+                    + buildErrorsAsUserFriendlyMessage);
         }
     }
 
-    public boolean hasBuildErrors(IProject project) throws CoreException, BuildError {
+    /**
+     * Get problem markers' messages as user friendly messages.
+     * 
+     * @param project
+     * @return
+     * @throws CoreException
+     */
+    public String getBuildErrorsAsUserFriendlyMessageInProject(IProject project) throws CoreException {
+        IMarker[] problemMarkers = getProblemMarkers(project);
 
-        IMarker[] generalProblemMarkers = project.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
+        if (problemMarkers == null || problemMarkers.length == 0) {
+            return null;
+        }
 
-        for (IMarker marker : generalProblemMarkers) {
-            String output = "";
+        String sgenFileProblemMarkerType = "org.yakindu.sct.generator.genmodel.ui.sgen.check.fast";
+        String sctFileProblemMarkerType = "org.yakindu.sct.ui.editor.diagnostic";
 
-            if ("org.yakindu.sct.generator.genmodel.ui.sgen.check.fast".equals(marker.getType())) {
-                output += "Yakindu-related error: something was wrong with the sgen file! ";
+        StringBuilder buildErrors = new StringBuilder("");
+
+        for (IMarker marker : problemMarkers) {
+            String logMsg = "";
+
+            boolean isJavaCodeRelatedProblem = "JDT".equals(marker.getAttribute(IMarker.SOURCE_ID));
+            IResource markerResource = marker.getResource();
+            IPath projectRelativePath = markerResource.getProjectRelativePath();
+            String markerType = marker.getType();
+
+            if (sgenFileProblemMarkerType.equals(markerType)) {
+                buildErrors.append("SGEN file problem: ");
+            } else if (sctFileProblemMarkerType.equals(markerType)) {
+                buildErrors.append("SCT file problem: ");
             }
 
-            output += "message: " + marker.getAttribute(IMarker.MESSAGE) + ", severity: "
-                    + marker.getAttribute(IMarker.SEVERITY, Integer.MAX_VALUE) + ", line number: "
-                    + marker.getAttribute(IMarker.LINE_NUMBER) + ", source id: "
-                    + marker.getAttribute(IMarker.SOURCE_ID)
-                    + ", resource's URI: '" + marker.getResource().getLocationURI()
-                    + ", resource's RAW URI: '" + marker.getResource().getRawLocationURI()
-                    + "', type: " + marker.getType();
+            buildErrors.append("(file: '" + projectRelativePath.toString() + "', line nr.: "
+                    + marker.getAttribute(IMarker.LINE_NUMBER) + "): " + marker.getAttribute(IMarker.MESSAGE) + " ");
 
-
-            if (!"JDT".equals(marker.getAttribute(IMarker.SOURCE_ID))) {// if the problem is not Java code specific, emphasize it
-                logger.severe(output);
+            logMsg += 
+                    "Problem marker message: '" + marker.getAttribute(IMarker.MESSAGE) 
+                    + "', severity: '" + marker.getAttribute(IMarker.SEVERITY, Integer.MAX_VALUE)
+                    + "', line number: '" + marker.getAttribute(IMarker.LINE_NUMBER) 
+                    + "', source id: '" + marker.getAttribute(IMarker.SOURCE_ID) 
+                    + "', resource's name: '" + markerResource.getName()
+                    + "', resource's project relative path: '" + projectRelativePath.toString()
+                    + "', resource's URI: '" + markerResource.getLocationURI() 
+                    + "', resource's RAW URI: '" + markerResource.getRawLocationURI() + "', type: " + marker.getType();
+            
+            if (!isJavaCodeRelatedProblem) {// if the problem is not Java code specific, emphasize it
+                logger.severe(logMsg);
             } else {
-                logger.info(output);
+                logger.info(logMsg);
             }
 
         }
@@ -489,11 +531,34 @@ public class DoRemoJobs {
         //            //}             
         //        }
 
-        //        logger.info("generalProblemMarkers: "+generalProblemMarkers.length+", javaProblemMarkers: "+javaProblemMarkers.length);
+        //        logger.info("generalProblemMarkers: "+generalProblemMarkers.length+", javaProblemMarkers: "+javaProblemMarkers.length);        
 
+        return buildErrors.toString();
+
+    }
+
+    /**
+     * Get problem markers in the project
+     * 
+     * @param project
+     * @return
+     * @throws CoreException
+     */
+    public IMarker[] getProblemMarkers(IProject project) throws CoreException {
+        return project.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
+    }
+
+    /**
+     * Returns true if the project has any kind of build errors
+     * 
+     * @param project
+     * @return
+     * @throws CoreException
+     */
+    public boolean hasBuildErrors(IProject project) throws CoreException {
         int maxProblemSeverity = project.findMaxProblemSeverity(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
 
-        logger.info("maxProblemSeverity: " + maxProblemSeverity);
+        // logger.info("maxProblemSeverity: " + maxProblemSeverity);
 
         if (maxProblemSeverity == IMarker.SEVERITY_ERROR) {
             return true;
@@ -568,117 +633,118 @@ public class DoRemoJobs {
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append(NEW_LINE);
 
-            for (Entry<String, IProject> currentEntry : iProjectsEntrySet) {
-                String neptunCode = currentEntry.getKey();
-                IProject currentIProject = currentEntry.getValue();
+            try {
+                for (Entry<String, IProject> currentEntry : iProjectsEntrySet) {
+                    String neptunCode = currentEntry.getKey();
+                    IProject currentIProject = currentEntry.getValue();
 
-                // see if cancellation has been requested
-                if (monitor.isCanceled()) {
-                    throw new OperationCanceledException();
-                    // return Status.CANCEL_STATUS;
-                }
-                //                monitor.subTask("Clean+build...");               
-
-                boolean wasSuccessful = false;
-                // the number of tests that failed during the run
-                int failureCount = 0;
-//                // the number of tests ignored during the run
-//                int ignoreCount = 0;
-                // the number of tests run
-                int runCount = 0;
-                HomeworkResult homeworkResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode,
-                        currentIProject);
-
-                monitor.worked(1);
-
-                logger.info("End of statechart analyzation.");
-                String dateFormatColumn = csvSimpleDateFormatForColumn.format(new Date());
-
-                String exceptionText = "";
-
-                Exception exceptionThrown = homeworkResult.getExceptionThrown();
-
-                if (exceptionThrown == null) {
-                    exceptionText = "-";
-                } else {
-                    if (exceptionThrown instanceof YakinduSGenFileNotFoundException) {
-                        exceptionText = "No SGEN file has been found!";
-                    } else {
-                        exceptionThrown.printStackTrace();
+                    // see if cancellation has been requested
+                    if (monitor.isCanceled()) {
+                        throw new OperationCanceledException(
+                                "Operation has been cancelled before processing the project called '"
+                                        + currentIProject.getName() + "'.");
+                        // return Status.CANCEL_STATUS;
                     }
+                    //                monitor.subTask("Clean+build...");               
 
-                    exceptionText += exceptionThrown.getMessage().replace(CSV_COMMA_DELIMITER, " == ")
-                            .replace(NEW_LINE, " == ").replace("\\r", " == ");
-                }
-
-                String testFailureText = "-";
-                String forbiddenElementsText = "-";
-
-                Result testStatechartResult = homeworkResult.getTestResult();
-
-                if (testStatechartResult != null) {
-                    String testFailureMessages = "";
-                    for (Failure failure : testStatechartResult.getFailures()) {
-                        testFailureMessages += failure.getMessage();
-                    }
-                    testFailureText = (testFailureMessages.length() > 0
-                            ? testFailureMessages.replace(NEW_LINE, " == ").replace("\\r", " == ") : "-");
-
-                    // true if all tests succeeded
-                    wasSuccessful = testStatechartResult.wasSuccessful();
+                    boolean wasSuccessful = false;
                     // the number of tests that failed during the run
-                    failureCount = testStatechartResult.getFailureCount();
-//                    // the number of tests ignored during the run
-//                    ignoreCount = testStatechartResult.getIgnoreCount();
+                    int failureCount = 0;
                     // the number of tests run
-                    runCount = testStatechartResult.getRunCount();
-                }
+                    int runCount = 0;
+                    HomeworkResult homeworkResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode,
+                            currentIProject);
 
-                LinkedList<ForbiddenElement> staticAnalysisResult = homeworkResult.getStaticAnalysisResult();
-                if (staticAnalysisResult != null) {
-                    forbiddenElementsText = "";
-                    for (ForbiddenElement forbiddenElement : staticAnalysisResult) {
-                        if (!"".equals(forbiddenElementsText)) { // ha van előző üzenet is, elválasztjuk
-                            forbiddenElementsText += " | ";
+                    monitor.worked(1);
+
+                    logger.info("End of statechart analyzation.");
+                    String dateFormatColumn = csvSimpleDateFormatForColumn.format(new Date());
+
+                    String exceptionText = "";
+
+                    Exception exceptionThrown = homeworkResult.getExceptionThrown();
+
+                    if (exceptionThrown == null) {
+                        exceptionText = "-";
+                    } else {
+                        if (exceptionThrown instanceof YakinduSGenFileNotFoundException) {
+                            exceptionText = "No SGEN file has been found! ";
+                        } else if (exceptionThrown instanceof org.xml.sax.SAXParseException) {
+                            exceptionText = "Invalid SCT file! ";
+                        } else {
+                            exceptionThrown.printStackTrace();
                         }
-                        forbiddenElementsText += forbiddenElement.getMessage();
+
+                        exceptionText += exceptionThrown.getMessage().replace(CSV_COMMA_DELIMITER, " == ")
+                                .replace(NEW_LINE, " == ").replace("\\r", " == ");
                     }
+
+                    String testFailureText = "-";
+                    String forbiddenElementsText = "-";
+
+                    Result testStatechartResult = homeworkResult.getTestResult();
+
+                    if (testStatechartResult != null) {
+                        String testFailureMessages = "";
+                        for (Failure failure : testStatechartResult.getFailures()) {
+                            testFailureMessages += failure.getMessage();
+                        }
+                        testFailureText = (testFailureMessages.length() > 0
+                                ? testFailureMessages.replace(NEW_LINE, " == ").replace("\\r", " == ") : "-");
+                        
+                        // true if all tests succeeded
+                        wasSuccessful = testStatechartResult.wasSuccessful();
+                        // the number of tests that failed during the run
+                        failureCount = testStatechartResult.getFailureCount();
+                        // // the number of tests ignored during the run
+                        // ignoreCount = testStatechartResult.getIgnoreCount();
+                        // the number of tests run
+                        runCount = testStatechartResult.getRunCount();
+                    }
+
+                    LinkedList<ForbiddenElement> staticAnalysisResult = homeworkResult.getStaticAnalysisResult();
+                    if (staticAnalysisResult != null) {
+                        forbiddenElementsText = "";
+                        for (ForbiddenElement forbiddenElement : staticAnalysisResult) {
+                            if (!"".equals(forbiddenElementsText)) {// ha van előző üzenet is, elválasztjuk
+                                forbiddenElementsText += " | ";
+                            }
+                            forbiddenElementsText += forbiddenElement.getMessage();
+                        }
+                    }
+
+                    String uploadedSctFileMessage = (homeworkResult.isSctUploaded() ? "Igen" : "Nem");
+
+                    // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
+                    csvWriter.append(dateFormatColumn);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append(neptunCode);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append((wasSuccessful && exceptionThrown == null) ? "Siker" : "Hiba");
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append(uploadedSctFileMessage);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append(forbiddenElementsText);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append(testFailureText);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append("" + failureCount);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append("" + runCount);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append(exceptionText);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+
+                    // and finally, add a new line
+                    csvWriter.append(NEW_LINE);
+
                 }
-                
-                String uploadedSctFileMessage = (homeworkResult.isSctUploaded() ? "Igen" : "Nem");
-                
-                // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
-                csvWriter.append(dateFormatColumn);
-                csvWriter.append(CSV_COMMA_DELIMITER);
-                csvWriter.append(neptunCode);
-                csvWriter.append(CSV_COMMA_DELIMITER);
-                csvWriter.append((wasSuccessful && exceptionThrown == null) ? "Siker" : "Hiba");
-                csvWriter.append(CSV_COMMA_DELIMITER);
-                csvWriter.append(uploadedSctFileMessage);
-                csvWriter.append(CSV_COMMA_DELIMITER);
-                csvWriter.append(forbiddenElementsText);
-                csvWriter.append(CSV_COMMA_DELIMITER);
-                csvWriter.append(testFailureText);
-                csvWriter.append(CSV_COMMA_DELIMITER);
-                csvWriter.append("" + failureCount);
-                csvWriter.append(CSV_COMMA_DELIMITER);
-                csvWriter.append("" + runCount);
-                csvWriter.append(CSV_COMMA_DELIMITER);
-                csvWriter.append(exceptionText);
-                csvWriter.append(CSV_COMMA_DELIMITER);
-//                csvWriter.append("" + ignoreCount);
-//                csvWriter.append(CSV_COMMA_DELIMITER);
-                
 
-                // and finally, add a new line
-                csvWriter.append(NEW_LINE);
-
-                // return Status.OK_STATUS;
-
+            } finally {
+                // flush the stream even if OperationCanceledException gets raised (so the user cancels the process)
+                csvWriter.flush();
             }
 
-            // flush the stream
-            csvWriter.flush();
         } catch (IOException ioex) {
             System.err.println(
                     "A problem occurred while trying to write to the CSV file at '" + CSV_targetFilePath.toUri() + "'");
@@ -743,7 +809,7 @@ public class DoRemoJobs {
             // logger.info("BUILD - bin content AFTER");
             // listFilesInDirectory(binPath);
 
-            LinkedList<ForbiddenElement> checkForbiddenElementsInStatechart = checkForbiddenElementsInStatechart(
+            LinkedList<ForbiddenElement> checkForbiddenElementsInStatechart = getForbiddenElementsInStatechart(
                     remoProject, "ASDASD");
 
             // logger.info("TESTING - bin content BEFORE");
@@ -976,7 +1042,14 @@ public class DoRemoJobs {
         return true;
     }
 
-    public Resource getYakinduFileAsResource(IProject project) throws FileNotFoundException {
+    /**
+     * Get 
+     * 
+     * @param project
+     * @return
+     * @throws FileNotFoundException
+     */
+    public Resource getYakinduSgenFileAsLoadedResource(IProject project) throws FileNotFoundException {
         IFile sgenFile = project.getFile(sgenFilePathInBundle);
         if (!sgenFile.exists()) {
             throw new YakinduSGenFileNotFoundException(
@@ -995,7 +1068,7 @@ public class DoRemoJobs {
     }
 
     public GeneratorModel getYakinduSgenFileAsGeneratorModel(IProject project) throws Exception {
-        Resource resource = getYakinduFileAsResource(project);
+        Resource resource = getYakinduSgenFileAsLoadedResource(project);
 
         if (resource == null || resource.getContents().size() == 0 || resource.getErrors().size() > 0) {
             throw new Exception("Yakindu sgen file could not be loaded as a Resource instance!");
@@ -1198,7 +1271,17 @@ public class DoRemoJobs {
         return true;
     }
 
+    /**
+     * List all the files in the given directory
+     * 
+     * @param path
+     * @throws IOException
+     */
     public static void listFilesInDirectory(Path path) throws IOException {
+        if(!Files.isDirectory(path)) {
+            return;
+        }
+        
         try (java.nio.file.DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path entry : stream) {
                 if (Files.isDirectory(entry)) {
@@ -1210,12 +1293,12 @@ public class DoRemoJobs {
     }
 
     /**
-     * @see https
-     *      ://github.com/ckulla/org.junit.contrib.eclipse/blob/master/ui/src
-     *      /org/junit/contrib/eclipse/ui/WorkspaceUtil.java
+     * Indicate a full build request and wait for it synchronously
+     * 
+     * @see https://github.com/ckulla/org.junit.contrib.eclipse/blob/master/ui/src/org/junit/contrib/eclipse/ui/WorkspaceUtil.java
      * @throws CoreException
      */
-    public void waitForFullBuild() throws CoreException {
+    public void doFullBuildAndWaitForIt() throws CoreException {
         ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
         boolean wasInterrupted = false;
         do {
@@ -1230,6 +1313,9 @@ public class DoRemoJobs {
         } while (wasInterrupted);
     }
 
+    /**
+     * TODO: this method is unfinished, doesn't work yet
+     */
     public void waitForBuildWithJobChangeAdapter() {
         logger.info("Waiting for full build with JobChangeAdapter...");
 
@@ -1257,6 +1343,18 @@ public class DoRemoJobs {
     }
 
     /**
+     * Request an automatic build and wait for its completion
+     * @throws CoreException
+     */
+    public void requestAutoBuildAndWaitForIt() throws CoreException {
+        logger.info("Indicating an automatic build request");
+        ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.AUTO_BUILD, new NullProgressMonitor());
+        waitForAutoAndManualBuild();
+    }
+
+    /**
+     * Wait synchronously for automatic and manual build requests 
+     * 
      * @see https://github.com/ckulla/org.junit.contrib.eclipse/blob/master/ui/src/org/junit/contrib/eclipse/ui/WorkspaceUtil.java
      */
     public void waitForAutoAndManualBuild() {
@@ -1283,8 +1381,7 @@ public class DoRemoJobs {
     }
 
     /**
-     * http://eclipse.1072660.n5.nabble.com/Wait-for-build-to-complete-and-check
-     * -if-errors-td57716.html#a57717
+     * http://eclipse.1072660.n5.nabble.com/Wait-for-build-to-complete-and-check-if-errors-td57716.html#a57717
      * 
      * @return
      */
@@ -1351,8 +1448,8 @@ public class DoRemoJobs {
 
         if (!sgenFileExists) {
             // throw new Exception("The '" + sgenFile.getRawLocationURI()
-            throw new Exception("The '" + sgenFile.getLocationURI()
-                    + "' file does not exist, so code generation is not possible!");
+            throw new Exception(
+                    "The '" + sgenFile.getLocationURI() + "' file does not exist, so code generation is not possible!");
         }
 
         logger.info("Trying to generate code...");
@@ -1368,6 +1465,14 @@ public class DoRemoJobs {
         return true;
     }
 
+    /**
+     * Get the SCT file (the statechart model) from the project
+     * 
+     * @param bundleName
+     * @param sctFilePathInBundle
+     * @return
+     * @throws Exception
+     */
     public Statechart getStatechartFromBundle(String bundleName, String sctFilePathInBundle) throws Exception {
         IProject project = getProject(bundleName);
         IFile file = project.getFile(sctFilePathInBundle);
@@ -1381,6 +1486,14 @@ public class DoRemoJobs {
         return statechartFromIFile;
     }
 
+    /**
+     * Get the SCT file (the statechart model) from the project
+     * 
+     * @param project
+     * @param sctFilePathInIProject
+     * @return
+     * @throws Exception
+     */
     public Statechart getStatechartFromIProject(IProject project, String sctFilePathInIProject) throws Exception {
         IFile file = project.getFile(sctFilePathInIProject);
         Statechart statechartFromIFile = StatechartAnalyzer.getStatechartFromIFile(file);
@@ -1393,15 +1506,30 @@ public class DoRemoJobs {
         return statechartFromIFile;
     }
 
-    public LinkedList<ForbiddenElement> checkForbiddenElementsInStatechart(IProject currentIProject, String neptunCode)
+    /**
+     * Check all potential forbidden elements in the SCT file
+     * 
+     * @param currentIProject
+     * @param neptunCode
+     * @return
+     * @throws Exception
+     */
+    public LinkedList<ForbiddenElement> getForbiddenElementsInStatechart(IProject currentIProject, String neptunCode)
             throws Exception {
         Statechart statechartFromIProject = getStatechartFromIProject(currentIProject,
                 "./homework" + neptunCode + "." + SCT_FILE_EXTENSION);// example: homeworkABC123.sct
         StatechartAnalyzer sta = new StatechartAnalyzer();
         sta.setStatechart(statechartFromIProject);
-        return sta.checkForbiddenElements();
+        return sta.getForbiddenElements();
     }
 
+    /**
+     * Run tests for checking the statechart
+     * 
+     * @param currentIProject
+     * @return
+     * @throws Exception
+     */
     public org.junit.runner.Result testStatechart(IProject currentIProject) throws Exception {
         logger.info("Executing tests");
 

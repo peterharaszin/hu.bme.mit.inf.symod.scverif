@@ -1,8 +1,7 @@
 package hu.bme.mit.remo.scverif.ui.handlers;
 
 import java.util.TreeMap;
-
-import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
+import java.util.logging.Logger;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
@@ -10,7 +9,6 @@ import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
@@ -25,6 +23,14 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
+
+/**
+ * Handler for doing the tests for all the potential projects in the workspace
+ * 
+ * @author Peter Haraszin
+ *
+ */
 public class StatechartProcessingHandler extends AbstractHandler {
 
     /**
@@ -33,14 +39,15 @@ public class StatechartProcessingHandler extends AbstractHandler {
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
         final Shell shell = HandlerUtil.getActiveShell(event);
-
+        Logger logger = DoRemoJobs.logger;
+        
         // https://eclipse.org/articles/Article-Concurrency/jobs-api.html
         final Job processHomeworksJob = new Job("Processing homeworks...") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 // // Generate instances
                 // SubProgressMonitor subProgressMonitor = null;
-
+                
                 try {
                     DoRemoJobs doRemoJobs = new DoRemoJobs(shell);
                     TreeMap<String, IProject> matchingProjectsInWorkspace = DoRemoJobs.getMatchingProjectsInWorkspace();
@@ -48,24 +55,26 @@ public class StatechartProcessingHandler extends AbstractHandler {
                     // subProgressMonitor = new SubProgressMonitor(monitor, 1);
                     // setProperty(key, value);
 
-                    System.out.println("StatechartProcessingHandler::execute(), at: '"
+                    logger.info("StatechartProcessingHandler::execute(), at: '"
                             + StatechartProcessingHandler.class.getProtectionDomain().getCodeSource().getLocation()
                             + "'.");
                     
 //                    doRemoJobs.cleanAndFullBuildAllProjectsInWorkspace(null);
                     //                  doRemoJobs.waitForBuildWithJobChangeAdapter();
                     // doRemoJobs.waitForAutoAndManualBuild();
+                    doRemoJobs.requestAutoBuildAndWaitForIt();
 
-                    System.out.println("============ OK, WAITING FOR AUTOBUILD DONE ==============");
+                    logger.info("============ OK, WAITING FOR AUTOBUILD DONE ==============");
                     doRemoJobs.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
 
-                    Display.getDefault().syncExec(new Runnable() {
+                    // Display.getDefault().syncExec(new Runnable() {
+                    Display.getDefault().asyncExec(new Runnable() {
                         public void run() {
                             MessageDialog.openInformation(shell, "Job done", "OK, everything went fine");
                         }
                     });
                 } catch (final Exception e) {
-                    DoRemoJobs.logger.info("Job ended with errors. (StatechartProcessingHandler::execute()). "
+                    logger.info("Job ended with errors. (StatechartProcessingHandler::execute()). "
                             + "Something went wrong when executing homework analyzation (exception type: '"
                             + e.getClass().getName() + "'): " + e.getMessage());
                     e.printStackTrace();
@@ -77,7 +86,7 @@ public class StatechartProcessingHandler extends AbstractHandler {
                     });
                 } finally {
                     monitor.done();
-                    DoRemoJobs.logger.info("End of job. (StatechartProcessingHandler::execute())");
+                    logger.info("End of job. (StatechartProcessingHandler::execute())");
                 }
                 return Status.OK_STATUS;
             }
@@ -91,10 +100,10 @@ public class StatechartProcessingHandler extends AbstractHandler {
             @Override
             public void done(IJobChangeEvent event) {
                 if (event.getResult().isOK()) {
-                    DoRemoJobs.logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
+                    logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
                 } else {
-                    DoRemoJobs.logger.severe(
-//                    DoRemoJobs.logger.error(
+                    logger.severe(
+//                    logger.error(
                             "Job called '" + processHomeworksJob.getName()
                             + "' did not complete successfully");
                 }

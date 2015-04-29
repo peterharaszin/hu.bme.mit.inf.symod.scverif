@@ -12,6 +12,12 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 
+/**
+ * Handler for analyzing the Yakindu .sgen file
+ * 
+ * @author Peter Haraszin
+ *
+ */
 public class SGenAnalyzerHandler extends AbstractHandler {
 
 	@Override

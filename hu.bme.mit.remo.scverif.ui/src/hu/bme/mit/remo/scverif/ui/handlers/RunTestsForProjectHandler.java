@@ -56,7 +56,7 @@ public class RunTestsForProjectHandler extends AbstractHandler {
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
         Logger logger = DoRemoJobs.logger;
-        
+
         logger.info("RunTestsForProjectHandler::execute(), at: '"
                 + RunTestsForProjectHandler.class.getProtectionDomain().getCodeSource().getLocation() + "'.");
 
@@ -68,7 +68,7 @@ public class RunTestsForProjectHandler extends AbstractHandler {
             protected IStatus run(IProgressMonitor monitor) {
                 // // Generate instances
                 // SubProgressMonitor subProgressMonitor = null;                
-                
+
                 try {
 
                     IStructuredSelection selection = (IStructuredSelection) HandlerUtil.getActiveMenuSelection(event);
@@ -78,7 +78,7 @@ public class RunTestsForProjectHandler extends AbstractHandler {
 
                     for (Object selectedObject : selectedObjects) {
                         logger.info("object.getClass().getName(): " + selectedObject.getClass().getName());
-                        if (selectedObject instanceof IJavaProject) { // Package Explorerből megnyitva
+                        if (selectedObject instanceof IJavaProject) {// Package Explorerből megnyitva
                             IJavaProject javaProject = (IJavaProject) selectedObject;
                             logger.info("javaProject.getElementName(): " + javaProject.getElementName());
                             IPath iPath = javaProject.getPath();
@@ -87,38 +87,40 @@ public class RunTestsForProjectHandler extends AbstractHandler {
                             logger.info("file.toURI(): " + file.toURI());
                             IProject iProject = javaProject.getProject();
                             logger.info("iProject.getRawLocationURI(): " + iProject.getRawLocationURI());
+                            logger.info("iProject.getLocationURI(): " + iProject.getLocationURI());
                             // add the project to the list
                             iProjectsList.add(iProject);
-                        } else if(selectedObject instanceof IProject){ // Project Explorerből megnyitva
+                        } else if (selectedObject instanceof IProject) {// Project Explorerből megnyitva
                             IProject iProject = (IProject) selectedObject;
                             logger.info("iProject.getRawLocationURI(): " + iProject.getRawLocationURI());
+                            logger.info("iProject.getLocationURI(): " + iProject.getLocationURI());
                             // add the project to the list
-                            iProjectsList.add(iProject);                    
+                            iProjectsList.add(iProject);
                         }
                     }
 
                     TreeMap<String, IProject> matchingProjects = DoRemoJobs.getMatchingProjects(iProjectsList);
 
-                    logger.info("matchingProjects.size(): "+matchingProjects.size());
-                    
-                    DoRemoJobs doRemoJobs = new DoRemoJobs(shell);                        
+                    logger.info("matchingProjects.size(): " + matchingProjects.size());
+
+                    DoRemoJobs doRemoJobs = new DoRemoJobs(shell);
                     doRemoJobs.runTestsOnProjects(matchingProjects);
-                } catch (OperationCanceledException e){
-                    logger.severe("Operation has been cancelled! "+e.getMessage());
-//                    logger.error("Operation has been cancelled! "+e.getMessage());
+                } catch (OperationCanceledException e) {
+                    logger.severe("Operation has been cancelled! " + e.getMessage());
+                    //                    logger.error("Operation has been cancelled! "+e.getMessage());
                     return Status.CANCEL_STATUS;
                 } catch (Exception e) {
                     logger.severe(
-//                    logger.error(
+                            //                    logger.error(
                             "Something went wrong when executing homework analyzation (exception type: '"
-                            + e.getClass().getName() + "'): " + e.getMessage());
+                                    + e.getClass().getName() + "'): " + e.getMessage());
                     e.printStackTrace();
-                }                
-                
+                }
+
                 return Status.OK_STATUS;
             }
         };
-        
+
         // "the user will be shown a progress dialog but will be given the option to run the job in the background by clicking a button in the dialog"
         processHomeworksJob.setUser(true);
         processHomeworksJob.setPriority(Job.LONG);
@@ -129,17 +131,16 @@ public class RunTestsForProjectHandler extends AbstractHandler {
                 if (event.getResult().isOK()) {
                     DoRemoJobs.logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
                 } else {
-                    DoRemoJobs.logger
-                        .severe("Job called '" + processHomeworksJob.getName()
-//                        .error("Job called '" + processHomeworksJob.getName()
+                    DoRemoJobs.logger.severe("Job called '" + processHomeworksJob.getName()
+                    //                        .error("Job called '" + processHomeworksJob.getName()
                             + "' did not complete successfully");
                 }
 
-                processHomeworksJob.removeJobChangeListener(this); // we don't want to listen to this job anymore
+                processHomeworksJob.removeJobChangeListener(this);// we don't want to listen to this job anymore
             }
         });
-        processHomeworksJob.schedule();        
+        processHomeworksJob.schedule();
 
-        return null; // return the result of the execution - reserved for future use, must be null!!
+        return null;// return the result of the execution - reserved for future use, must be null!!
     }
 }

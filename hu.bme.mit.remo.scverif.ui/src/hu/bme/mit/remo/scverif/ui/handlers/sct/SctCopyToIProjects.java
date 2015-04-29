@@ -45,7 +45,8 @@ public class SctCopyToIProjects extends AbstractHandler {
                 // if there is a project matching what we found
                 if(iProject != null && iProject.exists()){
                     // then copy...
-                    logger.info("OK, there is a matching project for '"+filename+"': "+iProject.getName()+" at '"+iProject.getRawLocationURI()+"'.");
+                    // logger.info("OK, there is a matching project for '"+filename+"': "+iProject.getName()+" at '"+iProject.getRawLocationURI()+"'.");
+                    logger.info("OK, there is a matching project for '"+filename+"': "+iProject.getName()+" at '"+iProject.getLocationURI()+"'.");
                 }
             }
         }

@@ -37,7 +37,8 @@ public class YakinduGeneratorExecutorModified extends GeneratorExecutor {
 		Resource resource = loadResourceWithInjector(file);
 		if (resource == null || resource.getContents().size() == 0
 				|| resource.getErrors().size() > 0)
-			throw new Exception("Resource could not be loaded with the injector from IFile at '"+file.getRawLocationURI()+"' (does it exist in the current workspace? --> "+file.exists()+")");
+		    // throw new Exception("Resource could not be loaded with the injector from IFile at '"+file.getRawLocationURI()+"' (does it exist in the current workspace? --> "+file.exists()+")");
+			throw new Exception("Resource could not be loaded with the injector from IFile at '"+file.getLocationURI()+"' (does it exist in the current workspace? --> "+file.exists()+")");
 		GeneratorModel model = (GeneratorModel) resource.getContents().get(0);
 
 		String generatorId = model.getGeneratorId();
@@ -77,7 +78,8 @@ public class YakinduGeneratorExecutorModified extends GeneratorExecutor {
 		Resource resource = loadResourceWithInjector(file);
 		if (resource == null || resource.getContents().size() == 0
 				|| resource.getErrors().size() > 0) {
-			throw new Exception("Resource could not be loaded with the injector from IFile at '"+file.getRawLocationURI()+"' (does it exist in the current workspace? --> "+file.exists()+")");
+		    // throw new Exception("Resource could not be loaded with the injector from IFile at '"+file.getRawLocationURI()+"' (does it exist in the current workspace? --> "+file.exists()+")");
+			throw new Exception("Resource could not be loaded with the injector from IFile at '"+file.getLocationURI()+"' (does it exist in the current workspace? --> "+file.exists()+")");
 		}
 
 		GeneratorModel model = (GeneratorModel) resource.getContents().get(0);

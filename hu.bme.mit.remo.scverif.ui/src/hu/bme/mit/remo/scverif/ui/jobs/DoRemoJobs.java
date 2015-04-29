@@ -42,6 +42,7 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -165,10 +166,18 @@ public class DoRemoJobs {
     }
 
     public Path getProjectRootDirectoryFromIProject(IProject iProject) {
-        // going up one directory
-        URI projectRawLocationURI = iProject.getRawLocationURI();
-        // don't know why yet, but ".." goes up TWO directories
-        URI projectsRootDirectoryURI = projectRawLocationURI.resolve(".");
+//        // going up one directory
+//        URI projectRawLocationURI = iProject.getRawLocationURI();
+//        // don't know why yet, but ".." goes up TWO directories
+//        URI projectsRootDirectoryURI = projectRawLocationURI.resolve(".");
+//        logger.info("projectRootDirectoryURI: " + projectsRootDirectoryURI);
+//        return Paths.get(projectsRootDirectoryURI);
+        
+        // using rawLocation is not OK: http://stackoverflow.com/questions/20493654/why-does-iresource-getrawlocation-return-null-for-iproject/20494107#20494107
+        // IPath location = iProject.getLocation();
+        URI locationURI = iProject.getLocationURI();
+        // going up one directory - don't know why yet, but ".." goes up TWO directories
+        URI projectsRootDirectoryURI = locationURI.resolve(".");
         logger.info("projectRootDirectoryURI: " + projectsRootDirectoryURI);
         return Paths.get(projectsRootDirectoryURI);
     }
@@ -218,7 +227,8 @@ public class DoRemoJobs {
                 String neptunCode = matcher.group(1);
                 matchingIProjects.put(neptunCode, iProject);
             } else {
-                logger.info("Ignoring project called '" + projectName + "' at '" + iProject.getRawLocationURI()
+                // logger.info("Ignoring project called '" + projectName + "' at '" + iProject.getRawLocationURI()
+                logger.info("Ignoring project called '" + projectName + "' at '" + iProject.getLocationURI()
                         + "', because it does not match the following regular expression: " + projectRegex);
             }
         }
@@ -238,11 +248,13 @@ public class DoRemoJobs {
 
     public void checkExistenceOfSGenFileInIProject(IProject project) throws YakinduSGenFileNotFoundException {
         logger.info("Checking if the sgen file exists in the project called '" + project.getName() + "' at '"
-                + project.getRawLocationURI() + "'...");
+                // + project.getRawLocationURI() + "'...");
+                + project.getLocationURI() + "'...");
         IFile sgenFile = project.getFile(sgenFilePathInBundle);
         if (!sgenFile.exists()) {
             throw new YakinduSGenFileNotFoundException(
-                    "Yakindu generator file has not been found at the following path: '" + sgenFile.getRawLocationURI()
+                    // "Yakindu generator file has not been found at the following path: '" + sgenFile.getRawLocationURI()
+                    "Yakindu generator file has not been found at the following path: '" + sgenFile.getLocationURI()
                             + "' (relative path: '" + sgenFilePathInBundle + "') in the following project: '"
                             + project.getName() + "'");
         }
@@ -298,7 +310,8 @@ public class DoRemoJobs {
         
         String statechartTargetFilename = "homework" + sctFileNameInRootDirectory;// e.g.
                                                                           // "homeworkA3BC1G.sct"
-        Path iProjectPath = Paths.get(iProject.getRawLocationURI());
+        // Path iProjectPath = Paths.get(iProject.getRawLocationURI());
+        Path iProjectPath = Paths.get(iProject.getLocationURI());
         Path statechartTargetPath = iProjectPath.resolve(statechartTargetFilename);
 
         // we create a backup
@@ -369,7 +382,9 @@ public class DoRemoJobs {
             NullProgressMonitor nullProgressMonitor = new NullProgressMonitor();
 
             logger.info("Neptun: " + neptunCode + "; project name: " + currentIProject.getName() + ", location URI: "
-                    + currentIProject.getRawLocationURI());
+                    // + currentIProject.getRawLocationURI()
+                    + currentIProject.getLocationURI()
+                    );
 
             String sctFileNameInRootDirectory = neptunCode + "." + SCT_FILE_EXTENSION; // e.g. "A3BC1G.sct"
 
@@ -405,7 +420,8 @@ public class DoRemoJobs {
             exceptionThrown = e;
 
             logger.severe("Problems occurred while trying to process the project called '" + currentIProject.getName()
-                    + "' at '" + currentIProject.getRawLocationURI() + "'. Message: " + e.getMessage());
+            // + "' at '" + currentIProject.getRawLocationURI() + "'. Message: " + e.getMessage());
+                    + "' at '" + currentIProject.getLocationURI() + "'. Message: " + e.getMessage());
         }
 
         HomeworkResult homeworkResult = new HomeworkResult(neptunCode, sctFileExistsInRootDirectory,
@@ -418,7 +434,8 @@ public class DoRemoJobs {
 
         if (hasBuildErrors(project)) {
             throw new BuildError("A build error occurred in the project called '" + project.getName() + "' (at '"
-                    + project.getRawLocationURI() + "')!");
+                    // + project.getRawLocationURI() + "')!");
+                    + project.getLocationURI() + "')!");
         }
     }
 
@@ -436,8 +453,11 @@ public class DoRemoJobs {
             output += "message: " + marker.getAttribute(IMarker.MESSAGE) + ", severity: "
                     + marker.getAttribute(IMarker.SEVERITY, Integer.MAX_VALUE) + ", line number: "
                     + marker.getAttribute(IMarker.LINE_NUMBER) + ", source id: "
-                    + marker.getAttribute(IMarker.SOURCE_ID) + ", resource URI: '"
-                    + marker.getResource().getRawLocationURI() + "', type: " + marker.getType();
+                    + marker.getAttribute(IMarker.SOURCE_ID)
+                    + ", resource's URI: '" + marker.getResource().getLocationURI()
+                    + ", resource's RAW URI: '" + marker.getResource().getRawLocationURI()
+                    + "', type: " + marker.getType();
+
 
             if (!"JDT".equals(marker.getAttribute(IMarker.SOURCE_ID))) {// if the problem is not Java code specific, emphasize it
                 logger.severe(output);
@@ -960,7 +980,8 @@ public class DoRemoJobs {
         IFile sgenFile = project.getFile(sgenFilePathInBundle);
         if (!sgenFile.exists()) {
             throw new YakinduSGenFileNotFoundException(
-                    "Yakindu generator file has not been found at the following path: '" + sgenFile.getRawLocationURI()
+                    // "Yakindu generator file has not been found at the following path: '" + sgenFile.getRawLocationURI()
+                    "Yakindu generator file has not been found at the following path: '" + sgenFile.getLocationURI()
                             + "' (relative path: '" + sgenFilePathInBundle + "') in the following project: '"
                             + project.getName() + "'");
         }
@@ -1025,10 +1046,12 @@ public class DoRemoJobs {
         IFolder folder = project.getFolder("yakindu");
 
         // Path yakinduTargetFolderAsPath = yakinduTargetFolder.toPath();
-        Path yakinduTargetFolderAsPath = Paths.get(folder.getRawLocationURI());
+        // Path yakinduTargetFolderAsPath = Paths.get(folder.getRawLocationURI());
+        Path yakinduTargetFolderAsPath = Paths.get(folder.getLocationURI());
         // File sgenFile = new File(yakinduTargetFolder, "homework2java.sgen");
         IFile sgenFile = project.getFile(sgenFilePathInBundle);
-        Path sgenFilePath = Paths.get(sgenFile.getRawLocationURI());
+        // Path sgenFilePath = Paths.get(sgenFile.getRawLocationURI());
+        Path sgenFilePath = Paths.get(sgenFile.getLocationURI());
 
         Files.walkFileTree(yakinduTargetFolderAsPath, new SimpleFileVisitor<Path>() {
             @Override
@@ -1234,9 +1257,7 @@ public class DoRemoJobs {
     }
 
     /**
-     * @see https
-     *      ://github.com/ckulla/org.junit.contrib.eclipse/blob/master/ui/src
-     *      /org/junit/contrib/eclipse/ui/WorkspaceUtil.java
+     * @see https://github.com/ckulla/org.junit.contrib.eclipse/blob/master/ui/src/org/junit/contrib/eclipse/ui/WorkspaceUtil.java
      */
     public void waitForAutoAndManualBuild() {
         logger.info("Waiting for autobuild (waitForAutoBuild())...");
@@ -1324,11 +1345,13 @@ public class DoRemoJobs {
         IFile sgenFile = project.getFile(_sgenFilePathInBundle);
         boolean sgenFileExists = sgenFile.exists();
 
-        logger.info("Generating code from file at '" + sgenFile.getRawLocationURI() + "' ('"
+        // logger.info("Generating code from file at '" + sgenFile.getRawLocationURI() + "' ('"
+        logger.info("Generating code from file at '" + sgenFile.getLocationURI() + "' ('"
                 + sgenFile.getFullPath().toString() + "')...");
 
         if (!sgenFileExists) {
-            throw new Exception("The '" + sgenFile.getRawLocationURI()
+            // throw new Exception("The '" + sgenFile.getRawLocationURI()
+            throw new Exception("The '" + sgenFile.getLocationURI()
                     + "' file does not exist, so code generation is not possible!");
         }
 
@@ -1352,7 +1375,8 @@ public class DoRemoJobs {
 
         if (statechartFromIFile == null) {
             throw new Exception("Statechart could not be parsed from the file at path '"
-                    + file.getRawLocationURI().getPath() + "'!");
+                    // + file.getRawLocationURI().getPath() + "'!");
+                    + file.getLocationURI().getPath() + "'!");
         }
         return statechartFromIFile;
     }
@@ -1363,7 +1387,8 @@ public class DoRemoJobs {
 
         if (statechartFromIFile == null) {
             throw new Exception("Statechart could not be parsed from the file at path '"
-                    + file.getRawLocationURI().getPath() + "'!");
+                    // + file.getRawLocationURI().getPath() + "'!");
+                    + file.getLocationURI().getPath() + "'!");
         }
         return statechartFromIFile;
     }
@@ -1381,7 +1406,8 @@ public class DoRemoJobs {
         logger.info("Executing tests");
 
         IFolder binFolder = currentIProject.getFolder("bin");
-        String binDirectory = binFolder.getRawLocationURI().getPath();
+        // String binDirectory = binFolder.getRawLocationURI().getPath();
+        String binDirectory = binFolder.getLocationURI().getPath();
 
         // bin-könyvtár elérési útja
         File binDirectoryAsFile = new File(binDirectory);
@@ -1390,7 +1416,8 @@ public class DoRemoJobs {
 
         IFolder currentIFolder = currentIProject.getFolder(testCompiledClassFolderPathInIProject);
 
-        Path currentIFolderAsPath = Paths.get(currentIFolder.getRawLocationURI());
+        // Path currentIFolderAsPath = Paths.get(currentIFolder.getRawLocationURI());
+        Path currentIFolderAsPath = Paths.get(currentIFolder.getLocationURI());
         Path testCompiledClassToLoadPath = currentIFolderAsPath.resolve(testClassName + ".class");
 
         boolean classFileExists_1 = Files.exists(testCompiledClassToLoadPath);

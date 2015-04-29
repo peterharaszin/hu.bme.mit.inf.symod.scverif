@@ -54,7 +54,7 @@ public class StatechartProcessingHandler extends AbstractHandler {
                     
 //                    doRemoJobs.cleanAndFullBuildAllProjectsInWorkspace(null);
                     //                  doRemoJobs.waitForBuildWithJobChangeAdapter();
-                    //                  doRemoJobs.waitForAutoAndManualBuild();
+                    // doRemoJobs.waitForAutoAndManualBuild();
 
                     System.out.println("============ OK, WAITING FOR AUTOBUILD DONE ==============");
                     doRemoJobs.runTestsOnProjects(matchingProjectsInWorkspace, monitor);

@@ -60,11 +60,13 @@ public class SGenAnalyzerHandler extends AbstractHandler {
 			YakinduGeneratorExecutorModified generatorExecutorModified = new YakinduGeneratorExecutorModified();
 			boolean executionSuccessful = generatorExecutorModified.executeGeneratorWithoutIProgressMonitor(file);
 		
-			MessageDialog.openInformation(shell, "System Modeling - code generation is ready", "Code has been generated from the file at '"+file.getRawLocationURI()+"'! Result: "+executionSuccessful);
+			// MessageDialog.openInformation(shell, "System Modeling - code generation is ready", "Code has been generated from the file at '"+file.getRawLocationURI()+"'! Result: "+executionSuccessful);
+			MessageDialog.openInformation(shell, "System Modeling - code generation is ready", "Code has been generated from the file at '"+file.getLocationURI()+"'! Result: "+executionSuccessful);
 		} catch (Exception e) {
 			System.out.println("Code generation failed:");
 			e.printStackTrace();
-			MessageDialog.openError(shell, "System Modeling - code generation failed", "An error occurred while trying to generate code from the file at '"+file.getRawLocationURI()+"': "+e.getMessage());
+			// MessageDialog.openError(shell, "System Modeling - code generation failed", "An error occurred while trying to generate code from the file at '"+file.getRawLocationURI()+"': "+e.getMessage());
+			MessageDialog.openError(shell, "System Modeling - code generation failed", "An error occurred while trying to generate code from the file at '"+file.getLocationURI()+"': "+e.getMessage());
 		} finally {
 			System.out.println("End of code generation.");
 		}

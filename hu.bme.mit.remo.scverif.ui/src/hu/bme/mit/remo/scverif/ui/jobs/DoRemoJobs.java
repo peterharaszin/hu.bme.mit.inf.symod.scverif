@@ -53,7 +53,6 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.swt.widgets.Display;
@@ -227,6 +226,12 @@ public class DoRemoJobs {
         return matchingIProjects;
     }
 
+    /**
+     * Returns true if .sgen file exists in the project
+     * 
+     * @param project
+     * @return
+     */
     public boolean sGenFileExistsInIProject(IProject project) {
         return project.getFile(sgenFilePathInBundle).exists();
     }
@@ -258,6 +263,19 @@ public class DoRemoJobs {
     }
 
     /**
+     * Returns true if SCT file exists in the root directory
+     * 
+     * @param projectsRootDirectoryPath
+     * @param sctFilename
+     * @return
+     */
+    public boolean sctFileExistsInRootDirectory(Path projectsRootDirectoryPath, String sctFilename) {
+        Path sctFilePathInRootDirectory = projectsRootDirectoryPath.resolve(sctFilename);
+        logger.info("Checking if '" + sctFilename + "' exists in '" + sctFilePathInRootDirectory.toUri() + "'...");
+        return Files.exists(sctFilePathInRootDirectory);
+    }    
+    
+    /**
      * Copy the SCT file from one place to another
      * 
      * @param currentEntry
@@ -265,23 +283,20 @@ public class DoRemoJobs {
      * @return
      * @throws IOException
      */
-    public boolean copySctFile(Path sourcePath, String neptunCode, IProject iProject) throws IOException {
+    public boolean copySctFile(Path sourcePath, String sctFileNameInRootDirectory, IProject iProject) throws IOException {
         // String neptunCode = currentEntry.getKey();
         // IProject iProject = currentEntry.getValue();
 
         logger.info(
-                "Copying SCT file (Neptun code: '" + neptunCode + "', project name: '" + iProject.getName() + "')...");
+                "Copying SCT file (project name: '" + iProject.getName() + "')...");
 
-        String statechartFilename = neptunCode + "." + SCT_FILE_EXTENSION;// e.g.
-                                                                          // "A3BC1G.sct"
-        Path statechartOriginalPath = sourcePath.resolve(statechartFilename);
-        if (!Files.exists(statechartOriginalPath)) {
-            throw new YakinduSCTFileNotFoundException("The statechart file at '" + statechartOriginalPath.toUri()
-                    + "' could not be found, so no files could be copied! Skipping the project called '"
-                    + iProject.getName() + "' at '" + iProject.getRawLocationURI() + "'...");
+        Path statechartOriginalPath = sourcePath.resolve(sctFileNameInRootDirectory);
+        
+        if(!sctFileExistsInRootDirectory(sourcePath, sctFileNameInRootDirectory)){
+            return false;
         }
-
-        String statechartTargetFilename = "homework" + statechartFilename;// e.g.
+        
+        String statechartTargetFilename = "homework" + sctFileNameInRootDirectory;// e.g.
                                                                           // "homeworkA3BC1G.sct"
         Path iProjectPath = Paths.get(iProject.getRawLocationURI());
         Path statechartTargetPath = iProjectPath.resolve(statechartTargetFilename);
@@ -340,44 +355,61 @@ public class DoRemoJobs {
      * @return
      * @throws Exception
      */
-    public HomeworkResult runTestsOnProject(Path projectsRootDirectoryPath, String neptunCode, IProject currentIProject)
-            throws Exception {
-
-        org.eclipse.core.runtime.NullProgressMonitor nullProgressMonitor = new org.eclipse.core.runtime.NullProgressMonitor();
-
-        logger.info("Neptun: " + neptunCode + "; project name: " + currentIProject.getName() + ", location URI: "
-                + currentIProject.getRawLocationURI());
-
-        String sctFileNameInRootDirectory = neptunCode + "." + SCT_FILE_EXTENSION;
-
-        checkExistenceOfSCTFileInRootDirectory(projectsRootDirectoryPath, sctFileNameInRootDirectory);
-
-        currentIProject.open(nullProgressMonitor);
-        // refreshing in case e.g. an sgen file has been added since the last
-        // build (so this way the new files get "recorded" in the workspace)
-        currentIProject.refreshLocal(IResource.DEPTH_INFINITE, nullProgressMonitor);
-
-        checkExistenceOfSGenFileInIProject(currentIProject);
-
-        //        deleteYakinduTargetFolderContents(currentIProject);
-
-        // cleaning does NOT seem to work synchronously even if some sources found on the internet say so... so this has been commented out (and it's not necessarily needed). 
-        // cleanProject(currentIProject, nullProgressMonitor);
-
-        copySctFile(projectsRootDirectoryPath, neptunCode, currentIProject);
-
-        checkBuildErrors(currentIProject);
-
-        buildProject(currentIProject, nullProgressMonitor);
-
-        LinkedList<ForbiddenElement> forbiddenElementsInStatechart = checkForbiddenElementsInStatechart(currentIProject,
-                neptunCode);
-
-        Result result = testStatechart(currentIProject);
+    public HomeworkResult runTestsOnProject(Path projectsRootDirectoryPath, String neptunCode,
+            IProject currentIProject) {
 
         // TODO: feladatokat valahonnan beállítani
         String tasks = "";
-        HomeworkResult homeworkResult = new HomeworkResult(neptunCode, forbiddenElementsInStatechart, result, tasks);
+        LinkedList<ForbiddenElement> forbiddenElementsInStatechart = null;
+        Result result = null;
+        boolean sctFileExistsInRootDirectory = false;
+        Exception exceptionThrown = null;
+
+        try {
+            NullProgressMonitor nullProgressMonitor = new NullProgressMonitor();
+
+            logger.info("Neptun: " + neptunCode + "; project name: " + currentIProject.getName() + ", location URI: "
+                    + currentIProject.getRawLocationURI());
+
+            String sctFileNameInRootDirectory = neptunCode + "." + SCT_FILE_EXTENSION; // e.g. "A3BC1G.sct"
+
+            checkExistenceOfSGenFileInIProject(currentIProject);
+
+            sctFileExistsInRootDirectory = sctFileExistsInRootDirectory(projectsRootDirectoryPath,
+                    sctFileNameInRootDirectory);
+
+            if (sctFileExistsInRootDirectory) {
+                // checkExistenceOfSCTFileInRootDirectory(projectsRootDirectoryPath, sctFileNameInRootDirectory);
+
+                currentIProject.open(nullProgressMonitor);
+                // refreshing in case e.g. an sgen file has been added since the last
+                // build (so this way the new files get "recorded" in the workspace)
+                currentIProject.refreshLocal(IResource.DEPTH_INFINITE, nullProgressMonitor);
+
+                //        deleteYakinduTargetFolderContents(currentIProject);
+
+                // cleaning does NOT seem to work synchronously even if some sources found on the internet say so... so this has been commented out (and it's not necessarily needed). 
+                // cleanProject(currentIProject, nullProgressMonitor);
+
+                copySctFile(projectsRootDirectoryPath, sctFileNameInRootDirectory, currentIProject);
+
+                checkBuildErrors(currentIProject);
+
+                buildProject(currentIProject, nullProgressMonitor);
+
+                forbiddenElementsInStatechart = checkForbiddenElementsInStatechart(currentIProject, neptunCode);
+
+                result = testStatechart(currentIProject);
+            }
+        } catch (final Exception e) {
+            exceptionThrown = e;
+
+            logger.severe("Problems occurred while trying to process the project called '" + currentIProject.getName()
+                    + "' at '" + currentIProject.getRawLocationURI() + "'. Message: " + e.getMessage());
+        }
+
+        HomeworkResult homeworkResult = new HomeworkResult(neptunCode, sctFileExistsInRootDirectory,
+                forbiddenElementsInStatechart, result, tasks, exceptionThrown);
         return homeworkResult;
     }
 
@@ -440,9 +472,9 @@ public class DoRemoJobs {
         //        logger.info("generalProblemMarkers: "+generalProblemMarkers.length+", javaProblemMarkers: "+javaProblemMarkers.length);
 
         int maxProblemSeverity = project.findMaxProblemSeverity(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
-        
-        logger.info("maxProblemSeverity: "+maxProblemSeverity);
-        
+
+        logger.info("maxProblemSeverity: " + maxProblemSeverity);
+
         if (maxProblemSeverity == IMarker.SEVERITY_ERROR) {
             return true;
         }
@@ -495,25 +527,25 @@ public class DoRemoJobs {
         try (BufferedWriter csvWriter = Files.newBufferedWriter(CSV_targetFilePath, charset)) {
             monitor.beginTask("Starting to process projects...", iProjectsEntrySet.size());
 
-            //        try (FileWriter csvWriter = new FileWriter(CSV_targetFilePath.toFile(), false)) {
-            // Dátum;Neptun-kód;Exception dobódott;Teszthibák;Hibás tesztesetek száma;Ignorált tesztesetek száma;Összes teszteset száma;Összegzés(Siker/hiba)
+            // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
             csvWriter.append("Dátum");
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Neptun-kód");
             csvWriter.append(CSV_COMMA_DELIMITER);
-            csvWriter.append("Exception dobódott");
+            csvWriter.append("Összegzés (siker/hiba)");
             csvWriter.append(CSV_COMMA_DELIMITER);
-            csvWriter.append("Teszthibák");
+            csvWriter.append("Beadott");
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Tiltott elemek");
             csvWriter.append(CSV_COMMA_DELIMITER);
-            csvWriter.append("Hibás tesztesetek száma");
+            csvWriter.append("Teszthibák");
             csvWriter.append(CSV_COMMA_DELIMITER);
-            csvWriter.append("Ignorált tesztesetek száma");
+            csvWriter.append("Hibás tesztesetek száma");
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Összes teszteset száma");
             csvWriter.append(CSV_COMMA_DELIMITER);
-            csvWriter.append("Összegzés (siker/hiba)");
+            csvWriter.append("Exception dobódott");
+            csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append(NEW_LINE);
 
             for (Entry<String, IProject> currentEntry : iProjectsEntrySet) {
@@ -530,113 +562,97 @@ public class DoRemoJobs {
                 boolean wasSuccessful = false;
                 // the number of tests that failed during the run
                 int failureCount = 0;
-                // the number of tests ignored during the run
-                int ignoreCount = 0;
+//                // the number of tests ignored during the run
+//                int ignoreCount = 0;
                 // the number of tests run
                 int runCount = 0;
-                Exception testException = null;
-                HomeworkResult homeworkResult = null;
+                HomeworkResult homeworkResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode,
+                        currentIProject);
 
-                try {
-                    homeworkResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode, currentIProject);
-                } catch (final Exception e) {
-                    System.err.println(
-                            "Problems occurred while trying to process the project called '" + currentIProject.getName()
-                                    + "' at '" + currentIProject.getRawLocationURI() + "'. Message: " + e.getMessage());
-                    testException = e;
+                monitor.worked(1);
 
-                    // if (parentActiveShell != null) {
-                    // Display.getDefault().syncExec(new Runnable() {
-                    // @Override
-                    // public void run() {
-                    // MessageDialog.openError(parentActiveShell,
-                    // "Job finished with errors", e.getMessage());
-                    // }
-                    // });
-                    // }
-                } finally {
-                    monitor.worked(1);
+                logger.info("End of statechart analyzation.");
+                String dateFormatColumn = csvSimpleDateFormatForColumn.format(new Date());
 
-                    logger.info("End of statechart analyzation.");
-                    String dateFormatColumn = csvSimpleDateFormatForColumn.format(new Date());
+                String exceptionText = "";
 
-                    // Dátum;Neptun-kód;Exception dobódott;Teszthibák;Tiltott elemek;Hibás tesztesetek száma;Ignorált tesztesetek száma;Összes teszteset száma;Összegzés(Siker/hiba)
-                    csvWriter.append(dateFormatColumn);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append(neptunCode);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
+                Exception exceptionThrown = homeworkResult.getExceptionThrown();
 
-                    String exceptionText = "";
-
-                    if (testException == null) {
-                        exceptionText = "-";
+                if (exceptionThrown == null) {
+                    exceptionText = "-";
+                } else {
+                    if (exceptionThrown instanceof YakinduSGenFileNotFoundException) {
+                        exceptionText = "No SGEN file has been found!";
                     } else {
-                        if (testException instanceof YakinduSCTFileNotFoundException) {
-                            exceptionText = "No SCT file has been found!";
-                        } else if (testException instanceof YakinduSGenFileNotFoundException) {
-                            exceptionText = "No SGEN file has been found!";
-                        } else {
-                            testException.printStackTrace();
-                        }
-
-                        exceptionText += (testException == null ? "-"
-                                : testException.getMessage().replace(NEW_LINE, " == ").replace("\\r", " == "));
+                        exceptionThrown.printStackTrace();
                     }
 
-                    csvWriter.append(exceptionText);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-
-                    String testFailureText = "-";
-                    String forbiddenElementsText = "";
-
-                    if (homeworkResult != null) {
-                        Result testStatechartResult = homeworkResult.getTestResult();
-
-                        if (testStatechartResult != null) {
-                            String testFailureMessages = "";
-                            for (Failure failure : testStatechartResult.getFailures()) {
-                                testFailureMessages += failure.getMessage();
-                            }
-                            testFailureText = (testFailureMessages.length() > 0
-                                    ? testFailureMessages.replace(NEW_LINE, " == ").replace("\\r", " == ") : "-");
-
-                            // true if all tests succeeded
-                            wasSuccessful = testStatechartResult.wasSuccessful();
-                            // the number of tests that failed during the run
-                            failureCount = testStatechartResult.getFailureCount();
-                            // the number of tests ignored during the run
-                            ignoreCount = testStatechartResult.getIgnoreCount();
-                            // the number of tests run
-                            runCount = testStatechartResult.getRunCount();
-                        }
-                        
-                        LinkedList<ForbiddenElement> staticAnalysisResult = homeworkResult.getStaticAnalysisResult();
-                        for (ForbiddenElement forbiddenElement : staticAnalysisResult) {
-                            if (!"".equals(forbiddenElementsText)) {
-                                forbiddenElementsText += " | ";
-                            }
-                            forbiddenElementsText += forbiddenElement.getMessage();
-                        }                        
-                    }
-
-                    csvWriter.append(testFailureText);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-
-                    csvWriter.append(forbiddenElementsText);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-
-                    csvWriter.append("" + failureCount);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append("" + ignoreCount);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append("" + runCount);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append((wasSuccessful && testException == null) ? "Siker" : "Hiba");
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-
-                    // and finally, add a new line
-                    csvWriter.append(NEW_LINE);
+                    exceptionText += exceptionThrown.getMessage().replace(CSV_COMMA_DELIMITER, " == ")
+                            .replace(NEW_LINE, " == ").replace("\\r", " == ");
                 }
+
+                String testFailureText = "-";
+                String forbiddenElementsText = "-";
+
+                Result testStatechartResult = homeworkResult.getTestResult();
+
+                if (testStatechartResult != null) {
+                    String testFailureMessages = "";
+                    for (Failure failure : testStatechartResult.getFailures()) {
+                        testFailureMessages += failure.getMessage();
+                    }
+                    testFailureText = (testFailureMessages.length() > 0
+                            ? testFailureMessages.replace(NEW_LINE, " == ").replace("\\r", " == ") : "-");
+
+                    // true if all tests succeeded
+                    wasSuccessful = testStatechartResult.wasSuccessful();
+                    // the number of tests that failed during the run
+                    failureCount = testStatechartResult.getFailureCount();
+//                    // the number of tests ignored during the run
+//                    ignoreCount = testStatechartResult.getIgnoreCount();
+                    // the number of tests run
+                    runCount = testStatechartResult.getRunCount();
+                }
+
+                LinkedList<ForbiddenElement> staticAnalysisResult = homeworkResult.getStaticAnalysisResult();
+                if (staticAnalysisResult != null) {
+                    forbiddenElementsText = "";
+                    for (ForbiddenElement forbiddenElement : staticAnalysisResult) {
+                        if (!"".equals(forbiddenElementsText)) { // ha van előző üzenet is, elválasztjuk
+                            forbiddenElementsText += " | ";
+                        }
+                        forbiddenElementsText += forbiddenElement.getMessage();
+                    }
+                }
+                
+                String uploadedSctFileMessage = (homeworkResult.isSctUploaded() ? "Igen" : "Nem");
+                
+                // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
+                csvWriter.append(dateFormatColumn);
+                csvWriter.append(CSV_COMMA_DELIMITER);
+                csvWriter.append(neptunCode);
+                csvWriter.append(CSV_COMMA_DELIMITER);
+                csvWriter.append((wasSuccessful && exceptionThrown == null) ? "Siker" : "Hiba");
+                csvWriter.append(CSV_COMMA_DELIMITER);
+                csvWriter.append(uploadedSctFileMessage);
+                csvWriter.append(CSV_COMMA_DELIMITER);
+                csvWriter.append(forbiddenElementsText);
+                csvWriter.append(CSV_COMMA_DELIMITER);
+                csvWriter.append(testFailureText);
+                csvWriter.append(CSV_COMMA_DELIMITER);
+                csvWriter.append("" + failureCount);
+                csvWriter.append(CSV_COMMA_DELIMITER);
+                csvWriter.append("" + runCount);
+                csvWriter.append(CSV_COMMA_DELIMITER);
+                csvWriter.append(exceptionText);
+                csvWriter.append(CSV_COMMA_DELIMITER);
+//                csvWriter.append("" + ignoreCount);
+//                csvWriter.append(CSV_COMMA_DELIMITER);
+                
+
+                // and finally, add a new line
+                csvWriter.append(NEW_LINE);
+
                 // return Status.OK_STATUS;
 
             }

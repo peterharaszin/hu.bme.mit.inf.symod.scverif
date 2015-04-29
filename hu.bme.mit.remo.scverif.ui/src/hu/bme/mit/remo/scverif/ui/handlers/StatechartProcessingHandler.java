@@ -52,7 +52,7 @@ public class StatechartProcessingHandler extends AbstractHandler {
                             + StatechartProcessingHandler.class.getProtectionDomain().getCodeSource().getLocation()
                             + "'.");
                     
-                    doRemoJobs.cleanAndFullBuildAllProjectsInWorkspace(null);
+//                    doRemoJobs.cleanAndFullBuildAllProjectsInWorkspace(null);
                     //                  doRemoJobs.waitForBuildWithJobChangeAdapter();
                     //                  doRemoJobs.waitForAutoAndManualBuild();
 

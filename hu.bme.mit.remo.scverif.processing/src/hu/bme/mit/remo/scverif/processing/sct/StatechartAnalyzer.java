@@ -24,10 +24,12 @@ import org.yakindu.base.expressions.expressions.impl.FeatureCallImpl;
 import org.yakindu.sct.model.sgraph.Declaration;
 import org.yakindu.sct.model.sgraph.Effect;
 import org.yakindu.sct.model.sgraph.Event;
+import org.yakindu.sct.model.sgraph.Pseudostate;
 import org.yakindu.sct.model.sgraph.Reaction;
 import org.yakindu.sct.model.sgraph.ReactionProperty;
 import org.yakindu.sct.model.sgraph.Region;
 import org.yakindu.sct.model.sgraph.Scope;
+import org.yakindu.sct.model.sgraph.State;
 import org.yakindu.sct.model.sgraph.Statechart;
 import org.yakindu.sct.model.sgraph.Transition;
 import org.yakindu.sct.model.sgraph.Trigger;
@@ -94,7 +96,7 @@ public class StatechartAnalyzer {
 
     public boolean doesContainTimeEventReactionTrigger() {
         temporaryStringBuilder.append("Does it contain a ReactionTrigger which is an instance of a time event?\n");
-        
+
         TreeIterator<EObject> eAllContents = statechart.eAllContents();
         while (eAllContents.hasNext()) {
             EObject nextEObject = eAllContents.next();
@@ -111,9 +113,9 @@ public class StatechartAnalyzer {
 
     public void collectModelElementsIntoMap() {
         temporaryStringBuilder.append("collecting and inspecting model elements...\n\n");
-        
+
         modelElementsCollector = new HashMap<Class<? extends EObject>, ArrayList<EObject>>();
-        
+
         TreeIterator<EObject> eAllContents = statechart.eAllContents();
 
         while (eAllContents.hasNext()) {
@@ -127,31 +129,33 @@ public class StatechartAnalyzer {
             }
 
             // temporaryStringBuilder.append("adding: "+nextEObject.toString() + "\n");
-            
+
             elementList.add(nextEObject);
         }
-        
+
         temporaryStringBuilder.append("\n\n");
 
-//        ArrayList<? extends EObject> interfaceList = modelElementsCollector.get(org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl.class);
-//        for (EObject currentInterfaceEObject : interfaceList) {
-//            org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl currentInterface = (org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl) currentInterfaceEObject;
-//            temporaryStringBuilder.append("currentInterface.getName(): " + currentInterface.getName()+"\n");
-//        }
+        //        ArrayList<? extends EObject> interfaceList = modelElementsCollector.get(org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl.class);
+        //        for (EObject currentInterfaceEObject : interfaceList) {
+        //            org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl currentInterface = (org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl) currentInterfaceEObject;
+        //            temporaryStringBuilder.append("currentInterface.getName(): " + currentInterface.getName()+"\n");
+        //        }
     }
-    
+
     public LinkedList<ForbiddenElement> checkForbiddenElements() {
         LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
-        
+
         // always/oncycle keywords are forbidden
         ArrayList<ReactionTriggerImpl> reactionTriggers = getReactionTriggers();
-        for (ReactionTriggerImpl reactionTriggerImpl : reactionTriggers) {
-            forbiddenElementList.addAll(checkReactionTrigger(reactionTriggerImpl));
+        if (reactionTriggers != null) {
+            for (ReactionTriggerImpl reactionTriggerImpl : reactionTriggers) {
+                forbiddenElementList.addAll(checkReactionTrigger(reactionTriggerImpl));
+            }
         }
-        
+
         return forbiddenElementList;
     }
-    
+
     /**
      * Check if the current statechart has an EventDefinition with the name passed as a parameter.
      * 
@@ -160,18 +164,18 @@ public class StatechartAnalyzer {
      * 
      * @see org.yakindu.sct.model.stext.stext.impl.EventDefinitionImpl
      */
-    public boolean hasEventDefinition(String nameToLookFor){
+    public boolean hasEventDefinition(String nameToLookFor) {
         ArrayList<EObject> eventList = modelElementsCollector.get(EventDefinitionImpl.class);
         for (EObject currentEventDefEObject : eventList) {
-            EventDefinitionImpl currentEvent = (EventDefinitionImpl)currentEventDefEObject;
-            if(currentEvent.getName().equals(nameToLookFor)){
+            EventDefinitionImpl currentEvent = (EventDefinitionImpl) currentEventDefEObject;
+            if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * Check if the current statechart has an InterfaceScope with the name passed as a parameter.
      * 
@@ -180,15 +184,15 @@ public class StatechartAnalyzer {
      * 
      * @see org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl
      */
-    public boolean hasInterfaceScope(String nameToLookFor){
+    public boolean hasInterfaceScope(String nameToLookFor) {
         ArrayList<EObject> interfaceList = modelElementsCollector.get(InterfaceScopeImpl.class);
         for (EObject currentEventDefEObject : interfaceList) {
-            InterfaceScopeImpl currentEvent = (InterfaceScopeImpl)currentEventDefEObject;
-            if(currentEvent.getName().equals(nameToLookFor)){
+            InterfaceScopeImpl currentEvent = (InterfaceScopeImpl) currentEventDefEObject;
+            if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -200,18 +204,18 @@ public class StatechartAnalyzer {
      * 
      * @see org.yakindu.sct.model.stext.stext.impl.OperationDefinitionImpl
      */
-    public boolean hasOperationDefinition(String nameToLookFor){
+    public boolean hasOperationDefinition(String nameToLookFor) {
         ArrayList<EObject> operationList = modelElementsCollector.get(OperationDefinitionImpl.class);
         for (EObject currentEventDefEObject : operationList) {
-            OperationDefinitionImpl currentEvent = (OperationDefinitionImpl)currentEventDefEObject;
-            if(currentEvent.getName().equals(nameToLookFor)){
+            OperationDefinitionImpl currentEvent = (OperationDefinitionImpl) currentEventDefEObject;
+            if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * Check if the current statechart has a VariableDefinition with the name passed as a parameter.
      * 
@@ -220,15 +224,15 @@ public class StatechartAnalyzer {
      * 
      * @see org.yakindu.sct.model.stext.stext.impl.VariableDefinitionImpl
      */
-    public boolean hasVariableDefinition(String nameToLookFor){
+    public boolean hasVariableDefinition(String nameToLookFor) {
         ArrayList<EObject> variableList = modelElementsCollector.get(VariableDefinitionImpl.class);
         for (EObject currentEventDefEObject : variableList) {
-            VariableDefinitionImpl currentEvent = (VariableDefinitionImpl)currentEventDefEObject;
-            if(currentEvent.getName().equals(nameToLookFor)){
+            VariableDefinitionImpl currentEvent = (VariableDefinitionImpl) currentEventDefEObject;
+            if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -240,18 +244,18 @@ public class StatechartAnalyzer {
      * 
      * @see org.yakindu.sct.model.sgraph.impl.RegionImpl
      */
-    public boolean hasRegion(String nameToLookFor){
+    public boolean hasRegion(String nameToLookFor) {
         ArrayList<EObject> regionList = modelElementsCollector.get(RegionImpl.class);
         for (EObject currentEventDefEObject : regionList) {
-            RegionImpl currentEvent = (RegionImpl)currentEventDefEObject;
-            if(currentEvent.getName().equals(nameToLookFor)){
+            RegionImpl currentEvent = (RegionImpl) currentEventDefEObject;
+            if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     /**
      * Check if the current statechart has an Entry with the name passed as a parameter.
      * 
@@ -260,18 +264,18 @@ public class StatechartAnalyzer {
      * 
      * @see org.yakindu.sct.model.sgraph.impl.EntryImpl
      */
-    public boolean hasEntry(String nameToLookFor){
+    public boolean hasEntry(String nameToLookFor) {
         ArrayList<EObject> entryList = modelElementsCollector.get(EntryImpl.class);
         for (EObject currentEventDefEObject : entryList) {
-            EntryImpl currentEvent = (EntryImpl)currentEventDefEObject;
-            if(currentEvent.getName().equals(nameToLookFor)){
+            EntryImpl currentEvent = (EntryImpl) currentEventDefEObject;
+            if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
         }
-        
+
         return false;
     }
-       
+
     /**
      * Get interfaces in the model
      * 
@@ -280,11 +284,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<InterfaceScopeImpl> getInterfaces(){
+    public ArrayList<InterfaceScopeImpl> getInterfaces() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(InterfaceScopeImpl.class);
     }
-    
+
     /**
      * Get events in the model
      * 
@@ -293,11 +297,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<EventDefinitionImpl> getEvents(){
+    public ArrayList<EventDefinitionImpl> getEvents() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(EventDefinitionImpl.class);
     }
-    
+
     /**
      * Get operations in the model
      * 
@@ -306,11 +310,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<OperationDefinitionImpl> getOperations(){
+    public ArrayList<OperationDefinitionImpl> getOperations() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(OperationDefinitionImpl.class);
     }
-    
+
     /**
      * Get variables in the model
      * 
@@ -319,11 +323,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<VariableDefinitionImpl> getVariables(){
+    public ArrayList<VariableDefinitionImpl> getVariables() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(VariableDefinitionImpl.class);
     }
-    
+
     /**
      * Get SimpleScopes in the model
      * 
@@ -332,11 +336,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<SimpleScopeImpl> getSimpleScopes(){
+    public ArrayList<SimpleScopeImpl> getSimpleScopes() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(SimpleScopeImpl.class);
     }
-    
+
     /**
      * Get ReactionTriggers in the model
      * 
@@ -345,11 +349,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<ReactionTriggerImpl> getReactionTriggers(){
+    public ArrayList<ReactionTriggerImpl> getReactionTriggers() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(ReactionTriggerImpl.class);
     }
-    
+
     /**
      * Get RegularEvents in the model
      * 
@@ -358,11 +362,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<RegularEventSpecImpl> getRegularEventSpecs(){
+    public ArrayList<RegularEventSpecImpl> getRegularEventSpecs() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(RegularEventSpecImpl.class);
     }
-    
+
     /**
      * Get TimeEventSpecs in the model
      * 
@@ -371,7 +375,7 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<TimeEventSpecImpl> getTimeEventSpecs(){
+    public ArrayList<TimeEventSpecImpl> getTimeEventSpecs() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(TimeEventSpecImpl.class);
     }
@@ -384,11 +388,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<EntryImpl> getEntries(){
+    public ArrayList<EntryImpl> getEntries() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(EntryImpl.class);
-    }    
-    
+    }
+
     /**
      * Get regions in the model
      * 
@@ -397,11 +401,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<RegionImpl> getRegions(){
+    public ArrayList<RegionImpl> getRegions() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(RegionImpl.class);
-    }    
-    
+    }
+
     /**
      * Get transitions in the model
      * 
@@ -410,11 +414,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<TransitionImpl> getTransitions(){
+    public ArrayList<TransitionImpl> getTransitions() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(TransitionImpl.class);
-    }    
-    
+    }
+
     /**
      * Get transitions in the model
      * 
@@ -423,11 +427,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<StateImpl> getStates(){
+    public ArrayList<StateImpl> getStates() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(StateImpl.class);
-    }    
-    
+    }
+
     /**
      * Get FeatureCalls in the model
      * 
@@ -436,11 +440,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<FeatureCallImpl> getFeatureCalls(){
+    public ArrayList<FeatureCallImpl> getFeatureCalls() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(FeatureCallImpl.class);
-    }    
-    
+    }
+
     /**
      * Get ElementReferenceExpressions in the model
      * 
@@ -449,11 +453,11 @@ public class StatechartAnalyzer {
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<ElementReferenceExpressionImpl> getElementReferenceExpressions(){
+    public ArrayList<ElementReferenceExpressionImpl> getElementReferenceExpressions() {
         // Doing it the dirty way...
         return (ArrayList) modelElementsCollector.get(ElementReferenceExpressionImpl.class);
-    }    
-    
+    }
+
     /**
      * Get the map containing all the elements in the model as Class-EObject pairs
      * @return
@@ -474,23 +478,47 @@ public class StatechartAnalyzer {
      */
     public LinkedList<ForbiddenElement> checkReactionTrigger(ReactionTrigger reactionTrigger) {
         EList<EventSpec> triggers = reactionTrigger.getTriggers();
-        
+
         LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
-        
-        if(triggers == null || triggers.isEmpty()){
-            forbiddenElementList.add(new ForbiddenElement("Trigger can not be empty!"));
+
+        if (triggers == null || triggers.isEmpty()) {
+            EObject eContainer = reactionTrigger.eContainer();
+            
+            if(eContainer instanceof Transition){
+                Transition containerTransition = (Transition) reactionTrigger.eContainer();
+                Vertex sourceVertex = containerTransition.getSource();
+
+                // it's only forbidden if its parent is a State (there are cases where Pseudostates are allowed)
+                if (sourceVertex instanceof State) {
+                    String sourceVertexName = sourceVertex.getName();
+                    forbiddenElementList.add(new ForbiddenElement(
+                            "Trigger can not be empty! (source vertex name: " + sourceVertexName + ")"));
+                }                
+            }
+            else if(eContainer instanceof State){ // akkor egy csúcsban van benne a belső állapotátmenet (beleírta a dobozba)
+                Vertex sourceVertex = (Vertex) eContainer;
+
+                // it's only forbidden if its parent is a State (there are cases where Pseudostates are allowed)
+                if (sourceVertex instanceof State) {
+                    String sourceVertexName = sourceVertex.getName();
+                    forbiddenElementList.add(new ForbiddenElement(
+                            "Trigger can not be empty! (source vertex name: " + sourceVertexName + ")"));
+                }                
+                
+            }
         }
-        
+
         for (EventSpec eventSpec : triggers) {
             // Do not allow oncycle and always as event for reactions.
             if (eventSpec instanceof AlwaysEvent) {
-                forbiddenElementList.add(new ForbiddenElement("The usage of always/oncycle keyword (or triggerless transitions) is forbidden!"));
+                forbiddenElementList.add(new ForbiddenElement(
+                        "The usage of always/oncycle keyword (or triggerless transitions) is forbidden!"));
             }
         }
-        
+
         return forbiddenElementList;
-    }    
-    
+    }
+
     /**
      * Process Yakindu statechart
      * 
@@ -506,16 +534,16 @@ public class StatechartAnalyzer {
         temporaryStringBuilder.append("=========================\n");
 
         temporaryStringBuilder.append("Checking forbidden elements...\n");
-        if(checkForbiddenElements == null){
+        if (checkForbiddenElements == null) {
             temporaryStringBuilder.append("There were no forbidden elements\n");
         } else {
             for (ForbiddenElement forbiddenElement : checkForbiddenElements) {
-                temporaryStringBuilder.append(forbiddenElement.toString()+"\n");
+                temporaryStringBuilder.append(forbiddenElement.toString() + "\n");
             }
         }
-        
+
         temporaryStringBuilder.append("=========================\n");
-        
+
         String specification = statechart.getSpecification();
         temporaryStringBuilder.append("statechart.getName(): \n" + nameOfStatechart + "\n");
         temporaryStringBuilder.append("statechart.getSpecification(): \n" + specification + "\n");
@@ -523,10 +551,10 @@ public class StatechartAnalyzer {
 
         temporaryStringBuilder.append("checkScopes(): ");
         checkScopes();
-                
+
         EList<Region> regions = statechart.getRegions();
         for (Region region : regions) {
-            
+
             String regionName = region.getName();
             temporaryStringBuilder.append("current region's name: '" + regionName + "'\n");
             EList<Vertex> vertices = region.getVertices();
@@ -554,9 +582,9 @@ public class StatechartAnalyzer {
             processScope(scope);
         }
 
-        temporaryStringBuilder
-                .append("does it contain time event reaction trigger? --> " + doesContainTimeEventReactionTrigger()+"\n");
-        
+        temporaryStringBuilder.append(
+                "does it contain time event reaction trigger? --> " + doesContainTimeEventReactionTrigger() + "\n");
+
         temporaryStringBuilder.append("collect and inspect model elements");
         collectModelElementsIntoMap();
 
@@ -587,19 +615,19 @@ public class StatechartAnalyzer {
         for (ForbiddenElement forbiddenElement : forbiddenElementList) {
             temporaryStringBuilder.append("forbidden element has been found: " + forbiddenElement.getMessage() + "\n");
         }
-        
+
         temporaryStringBuilder.append("		trigger.getClass().getName();: '" + trigger.getClass().getName() + "' \n");
         EList<EObject> eContents = trigger.eContents();
-//        for (EObject eObject : eContents) {
-//            System.out.println("eObject.toString(): " + eObject.toString());
-//            System.out.println("eObject.eClass().getClass().getName(): " + eObject.eClass().getClass().getName());
-//        }
+        //        for (EObject eObject : eContents) {
+        //            System.out.println("eObject.toString(): " + eObject.toString());
+        //            System.out.println("eObject.eClass().getClass().getName(): " + eObject.eClass().getClass().getName());
+        //        }
         // org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl
         TreeIterator<EObject> eAllContents = trigger.eAllContents();
         while (eAllContents.hasNext()) {
             EObject eObject = eAllContents.next();
             boolean isContainingTimeEvent = (eObject instanceof TimeEventSpec);
-            if(isContainingTimeEvent){
+            if (isContainingTimeEvent) {
                 System.out.println("eObject instanceof TimeEventSpec: " + isContainingTimeEvent);
             }
         }
@@ -704,28 +732,28 @@ public class StatechartAnalyzer {
     public void setStatechart(Statechart statechart) {
         this.statechart = statechart;
         temporaryStringBuilder.setLength(0);
-        collectModelElementsIntoMap();      
+        collectModelElementsIntoMap();
     }
 
-    public void checkScopes(){
+    public void checkScopes() {
         temporaryStringBuilder.append("checkScopes:\n");
         EList<Scope> scopes = statechart.getScopes();
-        
-//        EList<Reaction> reactions = statechart.getReactions();
-//        for (Reaction reaction : reactions) {
-//            checkReactionTrigger(reactionTrigger);
-//        }
-        
+
+        //        EList<Reaction> reactions = statechart.getReactions();
+        //        for (Reaction reaction : reactions) {
+        //            checkReactionTrigger(reactionTrigger);
+        //        }
+
         for (Scope scope : scopes) {
             if (scope instanceof InterfaceScope) {
                 InterfaceScope iScope = (InterfaceScope) scope;
-                temporaryStringBuilder.append("iScope.getName(): "+iScope.getName()+"\n");
-                temporaryStringBuilder.append("iScope.getEvents(): "+iScope.getEvents()+"\n");
-                temporaryStringBuilder.append("iScope.getVariables(): "+iScope.getVariables()+"\n");
+                temporaryStringBuilder.append("iScope.getName(): " + iScope.getName() + "\n");
+                temporaryStringBuilder.append("iScope.getEvents(): " + iScope.getEvents() + "\n");
+                temporaryStringBuilder.append("iScope.getVariables(): " + iScope.getVariables() + "\n");
             }
-        }        
+        }
     }
-    
+
     /**
      * Chcek whether the provided interface equals to the statechart's original interface
      * 

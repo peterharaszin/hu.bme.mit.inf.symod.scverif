@@ -11,12 +11,16 @@ public class HomeworkResult {
     String neptunCode;
     org.junit.runner.Result testResult;
     LinkedList<ForbiddenElement> staticAnalysisResult;
+    boolean isSctUploaded;
+    Exception exceptionThrown;
     
-    public HomeworkResult(String neptunCode, LinkedList<ForbiddenElement> staticAnalysisResult, Result testResult, String tasks) {
+    public HomeworkResult(String neptunCode, boolean isSctUploaded, LinkedList<ForbiddenElement> staticAnalysisResult, Result testResult, String tasks, Exception exceptionThrown) {
         this.tasks = tasks;
         this.neptunCode = neptunCode;
         this.testResult = testResult;
         this.staticAnalysisResult = staticAnalysisResult;
+        this.isSctUploaded = isSctUploaded;
+        this.exceptionThrown = exceptionThrown;
     }
 
     public String getTasks() {
@@ -29,6 +33,18 @@ public class HomeworkResult {
     
     public LinkedList<ForbiddenElement> getStaticAnalysisResult() {
         return staticAnalysisResult;
+    }
+    
+    public boolean isSctUploaded() {
+        return isSctUploaded;
+    }
+
+    public String getNeptunCode() {
+        return neptunCode;
+    }  
+    
+    public Exception getExceptionThrown() {
+        return exceptionThrown;
     }
 
     @Override

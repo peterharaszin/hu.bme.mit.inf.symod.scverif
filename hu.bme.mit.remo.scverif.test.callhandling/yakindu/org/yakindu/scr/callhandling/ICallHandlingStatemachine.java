@@ -19,6 +19,7 @@ public interface ICallHandlingStatemachine extends ITimerCallback, IStatemachine
 
 	public interface SCIPhone {
 		public void raiseIncoming_call();
+		public boolean isRaisedJustatest();
 		public long getDuration();
 		public void setDuration(long value);
 

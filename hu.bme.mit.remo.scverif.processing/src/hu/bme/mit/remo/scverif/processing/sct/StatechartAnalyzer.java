@@ -6,6 +6,7 @@ package hu.bme.mit.remo.scverif.processing.sct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
@@ -50,15 +51,15 @@ import org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl;
 import org.yakindu.sct.model.stext.stext.impl.VariableDefinitionImpl;
 
 /**
- * TODO: fix ugly model processing...
+ * Class for the statecharts' static checkings
  * 
- * @author Pete
+ * @author Peter Haraszin
  *
  */
 public class StatechartAnalyzer {
-    // temporary, REALLY ugly solution for writing out results
-    StringBuilder temporaryStringBuilder = new StringBuilder();
-    Statechart statechart;
+    public static final Logger logger = Logger.getLogger("System Modeling Log");
+    
+    private Statechart statechart;
     private HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsCollector;
 
     public StatechartAnalyzer() {
@@ -91,7 +92,7 @@ public class StatechartAnalyzer {
     }
 
     public boolean doesContainTimeEventReactionTrigger() {
-        temporaryStringBuilder.append("Does it contain a ReactionTrigger which is an instance of a time event?\n");
+        logger.info("Does it contain a ReactionTrigger which is an instance of a time event?\n");
 
         TreeIterator<EObject> eAllContents = statechart.eAllContents();
         while (eAllContents.hasNext()) {
@@ -108,7 +109,7 @@ public class StatechartAnalyzer {
     }
 
     public void collectModelElementsIntoMap() {
-        temporaryStringBuilder.append("collecting and inspecting model elements...\n\n");
+        logger.info("collecting and inspecting model elements...\n\n");
 
         modelElementsCollector = new HashMap<Class<? extends EObject>, ArrayList<EObject>>();
 
@@ -124,17 +125,17 @@ public class StatechartAnalyzer {
                 modelElementsCollector.put(nextEObjectClass, elementList);
             }
 
-            // temporaryStringBuilder.append("adding: "+nextEObject.toString() + "\n");
+            // logger.info("adding: "+nextEObject.toString() + "\n");
 
             elementList.add(nextEObject);
         }
 
-        temporaryStringBuilder.append("\n\n");
+        logger.info("\n\n");
 
         //        ArrayList<? extends EObject> interfaceList = modelElementsCollector.get(org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl.class);
         //        for (EObject currentInterfaceEObject : interfaceList) {
         //            org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl currentInterface = (org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl) currentInterfaceEObject;
-        //            temporaryStringBuilder.append("currentInterface.getName(): " + currentInterface.getName()+"\n");
+        //            logger.info("currentInterface.getName(): " + currentInterface.getName()+"\n");
         //        }
     }
 
@@ -521,53 +522,51 @@ public class StatechartAnalyzer {
      * @param statechart
      */
     public void processStatechart() {
-        temporaryStringBuilder.setLength(0);
-
         String nameOfStatechart = statechart.getName();
 
         LinkedList<ForbiddenElement> checkForbiddenElements = getForbiddenElements();
 
-        temporaryStringBuilder.append("=========================\n");
+        logger.info("=========================\n");
 
-        temporaryStringBuilder.append("Checking forbidden elements...\n");
+        logger.info("Checking forbidden elements...\n");
         if (checkForbiddenElements == null) {
-            temporaryStringBuilder.append("There were no forbidden elements\n");
+            logger.info("There were no forbidden elements\n");
         } else {
             for (ForbiddenElement forbiddenElement : checkForbiddenElements) {
-                temporaryStringBuilder.append(forbiddenElement.toString() + "\n");
+                logger.info(forbiddenElement.toString() + "\n");
             }
         }
 
-        temporaryStringBuilder.append("=========================\n");
+        logger.info("=========================\n");
 
         String specification = statechart.getSpecification();
-        temporaryStringBuilder.append("statechart.getName(): \n" + nameOfStatechart + "\n");
-        temporaryStringBuilder.append("statechart.getSpecification(): \n" + specification + "\n");
-        temporaryStringBuilder.append("iterating through '" + nameOfStatechart + "' statechart.getRegions():\n");
+        logger.info("statechart.getName(): \n" + nameOfStatechart + "\n");
+        logger.info("statechart.getSpecification(): \n" + specification + "\n");
+        logger.info("iterating through '" + nameOfStatechart + "' statechart.getRegions():\n");
 
-        temporaryStringBuilder.append("checkScopes(): ");
+        logger.info("checkScopes(): ");
         checkScopes();
 
         EList<Region> regions = statechart.getRegions();
         for (Region region : regions) {
 
             String regionName = region.getName();
-            temporaryStringBuilder.append("current region's name: '" + regionName + "'\n");
+            logger.info("current region's name: '" + regionName + "'\n");
             EList<Vertex> vertices = region.getVertices();
 
-            temporaryStringBuilder.append("iterating through region.getVertices() in: '" + regionName + "'\n");
+            logger.info("iterating through region.getVertices() in: '" + regionName + "'\n");
             for (Vertex vertex : vertices) {
                 processState(vertex);
             }
         }
 
-        temporaryStringBuilder.append("iterating through '" + nameOfStatechart + "' statechart's reactions: \n");
+        logger.info("iterating through '" + nameOfStatechart + "' statechart's reactions: \n");
         EList<Reaction> reactions = statechart.getReactions();
         for (Reaction reaction : reactions) {
             processReaction(reaction);
         }
 
-        temporaryStringBuilder.append("iterating through '" + nameOfStatechart + "' statechart's local reactions: \n");
+        logger.info("iterating through '" + nameOfStatechart + "' statechart's local reactions: \n");
         EList<Reaction> localReactions = statechart.getLocalReactions();
         for (Reaction reaction : localReactions) {
             processReaction(reaction);
@@ -578,21 +577,17 @@ public class StatechartAnalyzer {
             processScope(scope);
         }
 
-        temporaryStringBuilder.append(
+        logger.info(
                 "does it contain time event reaction trigger? --> " + doesContainTimeEventReactionTrigger() + "\n");
 
-        temporaryStringBuilder.append("collect and inspect model elements");
+        logger.info("collect and inspect model elements");
         collectModelElementsIntoMap();
-
-        // temporary, ugly solution
-        System.out.println(temporaryStringBuilder.toString());
-
     }
 
     private void processReaction(Reaction reaction) {
         System.out.println("Processing reaction...");
 
-        temporaryStringBuilder.append("reaction's properties: \n");
+        logger.info("reaction's properties: \n");
         EList<ReactionProperty> reactionProperties = reaction.getProperties();
         for (ReactionProperty reactionProperty : reactionProperties) {
             processReactionProperty(reactionProperty);
@@ -609,10 +604,10 @@ public class StatechartAnalyzer {
         LinkedList<ForbiddenElement> forbiddenElementList = checkReactionTrigger((ReactionTrigger) trigger);
 
         for (ForbiddenElement forbiddenElement : forbiddenElementList) {
-            temporaryStringBuilder.append("forbidden element has been found: " + forbiddenElement.getMessage() + "\n");
+            logger.info("forbidden element has been found: " + forbiddenElement.getMessage() + "\n");
         }
 
-        temporaryStringBuilder.append("		trigger.getClass().getName();: '" + trigger.getClass().getName() + "' \n");
+        logger.info("		trigger.getClass().getName();: '" + trigger.getClass().getName() + "' \n");
         // EList<EObject> eContents = trigger.eContents();
         //        for (EObject eObject : eContents) {
         //            System.out.println("eObject.toString(): " + eObject.toString());
@@ -630,16 +625,15 @@ public class StatechartAnalyzer {
     }
 
     private void processEffect(Effect effect) {
-        temporaryStringBuilder.append("		effect.getClass().getName(): '" + effect.getClass().getName() + "' \n");
+        logger.info("		effect.getClass().getName(): '" + effect.getClass().getName() + "' \n");
     }
 
     private void processReactionProperty(ReactionProperty reactionProperty) {
-        temporaryStringBuilder
-                .append("		reactionProperty.getClass().getName(): \n" + reactionProperty.getClass().getName());
+        logger.info("		reactionProperty.getClass().getName(): \n" + reactionProperty.getClass().getName());
     }
 
     public void processScope(Scope scope) {
-        temporaryStringBuilder.append("scope.eClass().getName(): '" + scope.eClass().getName() + "'\n");
+        logger.info("scope.eClass().getName(): '" + scope.eClass().getName() + "'\n");
         EList<Variable> interfaceVariables = scope.getVariables();
 
         for (Variable variable : interfaceVariables) {
@@ -658,15 +652,15 @@ public class StatechartAnalyzer {
     }
 
     public void processEvent(Event event) {
-        temporaryStringBuilder.append("      event's name: " + event.getName() + "\n");
+        logger.info("      event's name: " + event.getName() + "\n");
     }
 
     public void processVariable(Variable variable) {
-        temporaryStringBuilder.append("      variable's name: " + variable.getName() + "\n");
+        logger.info("      variable's name: " + variable.getName() + "\n");
     }
 
     public void processDeclaration(Declaration declaration) {
-        temporaryStringBuilder.append("      declaration's name: " + declaration.getName() + "\n");
+        logger.info("      declaration's name: " + declaration.getName() + "\n");
     }
 
     /**
@@ -689,17 +683,17 @@ public class StatechartAnalyzer {
 
         EList<Transition> vertexOutgoingTransitions = vertex.getOutgoingTransitions();
 
-        temporaryStringBuilder.append("\n<-- Outgoing transitions:\n");
+        logger.info("\n<-- Outgoing transitions:\n");
         for (Transition currentOutgoingTransition : vertexOutgoingTransitions) {
             processTransition(currentOutgoingTransition);
         }
 
         Region parentRegion = vertex.getParentRegion();
-        temporaryStringBuilder.append("»» current vertexName: '" + vertexName + "'"
+        logger.info("»» current vertexName: '" + vertexName + "'"
                 + (vertexName.length() == 0 ? " (entry state!)" : "") + "\n");
-        temporaryStringBuilder.append(parentRegion);
+        logger.info(parentRegion.toString());
 
-        temporaryStringBuilder.append("\n--> Incoming transitions:\n");
+        logger.info("\n--> Incoming transitions:\n");
         for (Transition currentIncomingTransition : vertexIncomingTransitions) {
             processTransition(currentIncomingTransition);
         }
@@ -711,12 +705,12 @@ public class StatechartAnalyzer {
         String transitionSpecification = transition.getSpecification();
         Trigger transitionTrigger = transition.getTrigger();
 
-        temporaryStringBuilder.append("transition's target: '" + transitionTargetName + "',\n"
+        logger.info("transition's target: '" + transitionTargetName + "',\n"
                 + "transition's specification: '" + transitionSpecification + "', " + "\n");
 
         if (transitionTrigger != null) {
-            temporaryStringBuilder.append("\t\ttransition's trigger: ");
-            temporaryStringBuilder.append(transitionTrigger.toString() + "\n");
+            logger.info("\t\ttransition's trigger: ");
+            logger.info(transitionTrigger.toString() + "\n");
             processTrigger(transitionTrigger);
         }
     }
@@ -727,12 +721,11 @@ public class StatechartAnalyzer {
 
     public void setStatechart(Statechart statechart) {
         this.statechart = statechart;
-        temporaryStringBuilder.setLength(0);
         collectModelElementsIntoMap();
     }
 
     public void checkScopes() {
-        temporaryStringBuilder.append("checkScopes:\n");
+        logger.info("checkScopes:\n");
         EList<Scope> scopes = statechart.getScopes();
 
         //        EList<Reaction> reactions = statechart.getReactions();
@@ -743,43 +736,10 @@ public class StatechartAnalyzer {
         for (Scope scope : scopes) {
             if (scope instanceof InterfaceScope) {
                 InterfaceScope iScope = (InterfaceScope) scope;
-                temporaryStringBuilder.append("iScope.getName(): " + iScope.getName() + "\n");
-                temporaryStringBuilder.append("iScope.getEvents(): " + iScope.getEvents() + "\n");
-                temporaryStringBuilder.append("iScope.getVariables(): " + iScope.getVariables() + "\n");
+                logger.info("iScope.getName(): " + iScope.getName() + "\n");
+                logger.info("iScope.getEvents(): " + iScope.getEvents() + "\n");
+                logger.info("iScope.getVariables(): " + iScope.getVariables() + "\n");
             }
         }
-    }
-
-    /**
-     * Chcek whether the provided interface equals to the statechart's original interface
-     * 
-     * @param anotherSpecification
-     * @return
-     */
-    public boolean interfaceSpecificationEqualsTo(String anotherSpecification) {
-        // using Pattern.split() may perform better than the StringTokenizer:
-        // http://stackoverflow.com/questions/691184/scanner-vs-stringtokenizer-vs-string-split/691224#691224
-        // "Using String.split() is convenient as you can tokenise and get the result in a single line. But it is sub-optimal in that it must recompile the regular expression each time. A possible gain is to compile the pattern once, then call Pattern.split():"
-        Pattern p = Pattern.compile("\\s+");
-
-        String specification = statechart.getSpecification();
-        String[] originalSpecificationTokens = p.split(specification);
-        String[] anotherSpecificationTokens = p.split(anotherSpecification);
-
-        if (originalSpecificationTokens.length != anotherSpecificationTokens.length) {
-            System.err.println("The number of tokens don't match: original interface's tokens: "
-                    + originalSpecificationTokens.length + ", the other interface's tokens: "
-                    + anotherSpecificationTokens.length);
-            return false;
-        }
-
-        for (int i = 0; i < anotherSpecificationTokens.length; i++) {
-            if (!originalSpecificationTokens[i].equals(anotherSpecificationTokens[i])) {
-                System.err.println("The current token doesn't match: original token: " + originalSpecificationTokens[i]
-                        + ", the other interface's current token: " + anotherSpecificationTokens[i]);
-                return false;
-            }
-        }
-        return true;
     }
 }

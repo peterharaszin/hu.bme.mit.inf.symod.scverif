@@ -41,6 +41,16 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 			incoming_call = true;
 		}
 
+		private boolean justatest;
+
+		public boolean isRaisedJustatest() {
+			return justatest;
+		}
+
+		private void raiseJustatest() {
+			justatest = true;
+		}
+
 		private long duration;
 		public long getDuration() {
 			return duration;
@@ -54,6 +64,9 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 			incoming_call = false;
 		}
 
+		public void clearOutEvents() {
+			justatest = false;
+		}
 	}
 
 	private SCIPhoneImpl sCIPhone;
@@ -61,6 +74,8 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 	public enum State {
 		main_region_Idle, main_region_Incoming_Call, main_region_Active_Call, main_region_Dismiss_Call, $NullState$
 	};
+
+	private long justatestvariable;
 
 	private final State[] stateVector = new State[1];
 
@@ -89,6 +104,8 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 		clearOutEvents();
 
 		sCIPhone.duration = 0;
+
+		justatestvariable = 42;
 	}
 
 	public void enter() {
@@ -152,6 +169,7 @@ public class CallHandlingStatemachine implements ICallHandlingStatemachine {
 	* This method resets the outgoing events.
 	*/
 	protected void clearOutEvents() {
+		sCIPhone.clearOutEvents();
 	}
 
 	/**

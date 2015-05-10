@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:sgraph="http://www.yakindu.org/sct/sgraph/2.0.0">
-  <sgraph:Statechart xmi:id="_-H6cgEL3EeSapYoaiQPv4g" specification="interface User:&#xD;&#xA;in event accept_call&#xD;&#xA;in event dismiss_call&#xD;&#xA;operation justATestOperation()&#xD;&#xA;&#xD;&#xA;interface Phone:&#xD;&#xA;var duration : integer&#xD;&#xA;in event incoming_call&#xD;&#xA;&#xD;&#xA;" name="CallHandling">
+  <sgraph:Statechart xmi:id="_-H6cgEL3EeSapYoaiQPv4g" specification="interface User:&#xD;&#xA;in event accept_call&#xD;&#xA;in event dismiss_call&#xD;&#xA;operation justATestOperation()&#xD;&#xA;&#xD;&#xA;interface Phone:&#xD;&#xA;var duration : integer&#xD;&#xA;in event incoming_call&#xD;&#xA;out event justatest&#xD;&#xA;&#xD;&#xA;internal:&#xD;&#xA; var justatestvariable:integer = 42&#xD;&#xA;&#xD;&#xA;" name="CallHandling">
     <regions xmi:id="_-I3ewEL3EeSapYoaiQPv4g" name="main region">
       <vertices xsi:type="sgraph:Entry" xmi:id="_-Jph4EL3EeSapYoaiQPv4g">
         <outgoingTransitions xmi:id="_-J1vIEL3EeSapYoaiQPv4g" target="_-JslMEL3EeSapYoaiQPv4g"/>

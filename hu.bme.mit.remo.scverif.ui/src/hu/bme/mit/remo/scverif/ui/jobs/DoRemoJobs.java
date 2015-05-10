@@ -121,7 +121,7 @@ public class DoRemoJobs {
     private static final SimpleDateFormat csvSimpleDateFormatForFilename = new SimpleDateFormat(
             dateFormatPattern.replace(' ', '_'));
 
-    public static final Logger logger = Logger.getLogger("RemoLog");
+    public static final Logger logger = Logger.getLogger("System Modeling Log");
     //    public static final Logger logger = LoggerFactory.getLogger(DoRemoJobs.class);
     private static DoRemoJobs.MyConsoleHandler myConsoleHandler = new MyConsoleHandler();
     private static final String projectRegex = "hu\\.bme\\.mit\\.inf\\.symod\\.(\\w{6})\\.homework";;

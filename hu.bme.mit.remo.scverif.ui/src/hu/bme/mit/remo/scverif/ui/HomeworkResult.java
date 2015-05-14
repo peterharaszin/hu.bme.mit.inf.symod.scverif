@@ -1,10 +1,12 @@
 package hu.bme.mit.remo.scverif.ui;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import org.junit.runner.Result;
 
 import hu.bme.mit.remo.scverif.processing.sct.ForbiddenElement;
+import hu.bme.mit.remo.scverif.processing.sct.MissingEObject;
 
 /**
  * Container class for storing the result of a homework test
@@ -16,15 +18,17 @@ public class HomeworkResult {
     String tasks;
     String neptunCode;
     org.junit.runner.Result testResult;
-    LinkedList<ForbiddenElement> staticAnalysisResult;
+    LinkedList<ForbiddenElement> staticAnalysisResultForbiddenElementsInModel;
+    ArrayList<MissingEObject> staticAnalysisResultMissingElementsInInterface;
     boolean isSctUploaded;
     Exception exceptionThrown;
     
-    public HomeworkResult(String neptunCode, boolean isSctUploaded, LinkedList<ForbiddenElement> staticAnalysisResult, Result testResult, String tasks, Exception exceptionThrown) {
+    public HomeworkResult(String neptunCode, boolean isSctUploaded, LinkedList<ForbiddenElement> staticAnalysisResult, ArrayList<MissingEObject> missingElementsInInterface, Result testResult, String tasks, Exception exceptionThrown) {
         this.tasks = tasks;
         this.neptunCode = neptunCode;
         this.testResult = testResult;
-        this.staticAnalysisResult = staticAnalysisResult;
+        this.staticAnalysisResultForbiddenElementsInModel = staticAnalysisResult;
+        this.staticAnalysisResultMissingElementsInInterface = missingElementsInInterface;
         this.isSctUploaded = isSctUploaded;
         this.exceptionThrown = exceptionThrown;
     }
@@ -37,8 +41,12 @@ public class HomeworkResult {
         return testResult;
     }
     
-    public LinkedList<ForbiddenElement> getStaticAnalysisResult() {
-        return staticAnalysisResult;
+    public LinkedList<ForbiddenElement> getForbiddenElementsInModel() {
+        return staticAnalysisResultForbiddenElementsInModel;
+    }
+    
+    public ArrayList<MissingEObject> getMissingElementsInInterface() {
+        return staticAnalysisResultMissingElementsInInterface;
     }
     
     public boolean isSctUploaded() {
@@ -55,9 +63,15 @@ public class HomeworkResult {
 
     @Override
     public String toString() {
-        String returnString = "HomeworkResult [neptunCode=" + neptunCode + ", tasks=" + tasks + ", testResult failure count=" + testResult.getFailureCount() + ". Result of static analysis: ";
-        for (ForbiddenElement forbiddenElement : staticAnalysisResult) {
+        String returnString = "HomeworkResult [neptunCode=" + neptunCode + ", tasks=" + tasks + ", testResult failure count=" + testResult.getFailureCount() + ". Result of static analysis: forbidden elements: ";
+        for (ForbiddenElement forbiddenElement : staticAnalysisResultForbiddenElementsInModel) {
             returnString += " " + forbiddenElement.getMessage() + ", ";
+        }
+        
+        returnString += " missing elements in the interface: ";
+        
+        for (MissingEObject missingEObject : staticAnalysisResultMissingElementsInInterface) {
+            returnString += " " + missingEObject.getMessage() + ", ";
         }
         
         return returnString;

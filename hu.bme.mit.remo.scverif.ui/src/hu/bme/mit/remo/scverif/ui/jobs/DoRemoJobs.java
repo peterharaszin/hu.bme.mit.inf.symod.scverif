@@ -17,8 +17,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,6 +55,7 @@ import org.eclipse.core.runtime.jobs.IJobManager;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -70,6 +73,7 @@ import org.yakindu.sct.model.sgen.GeneratorModel;
 import org.yakindu.sct.model.sgraph.Statechart;
 
 import hu.bme.mit.remo.scverif.processing.sct.ForbiddenElement;
+import hu.bme.mit.remo.scverif.processing.sct.MissingEObject;
 import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
 import hu.bme.mit.remo.scverif.processing.sgen.YakinduGeneratorExecutorModified;
 import hu.bme.mit.remo.scverif.ui.BuildError;
@@ -93,16 +97,17 @@ public class DoRemoJobs {
     public static final String SGEN_FILE_EXTENSION = "sgen";
     public static final String yakindu_BUILDER_ID = "org.yakindu.sct.builder.SCTBuilder";
 
+    private static final String sgenTargetFolder = "yakindu";
     // the relative path of the sgen file in the IProject
-    private static final String sgenFilePathInBundle = "yakindu/homework2java." + SGEN_FILE_EXTENSION;
+    private static final String sgenFilePathInBundle = sgenTargetFolder + "/homework2java." + SGEN_FILE_EXTENSION;
     // the package name that contains the test file in every homework projects
-    private static final String packageNameContainingTestCases = "hu.bme.mit.inf.symod.homework.generic.tests";
+    private static final String packageContainingTestCases = "hu.bme.mit.inf.symod.homework.generic.tests";
     private static final String testClassName = "TestCases";
     // the full class name of the test file (containing the package name) for dynamic class loading
-    private static final String testFullClassNameWithPackage = packageNameContainingTestCases + "." + testClassName;
+    private static final String testFullClassNameWithPackage = packageContainingTestCases + "." + testClassName;
 
     private static final String testCompiledClassFolderPathInIProject = "bin/"
-            + packageNameContainingTestCases.replace(".", "/") + "/";
+            + packageContainingTestCases.replace(".", "/") + "/";
     private static final String testCompiledClassFileFullPathInIProject = testCompiledClassFolderPathInIProject
             + testClassName + ".class";
 
@@ -126,6 +131,9 @@ public class DoRemoJobs {
     private static DoRemoJobs.MyConsoleHandler myConsoleHandler = new MyConsoleHandler();
     private static final String projectRegex = "hu\\.bme\\.mit\\.inf\\.symod\\.(\\w{6})\\.homework";;
     private static final Pattern patternCompiled = Pattern.compile(projectRegex, Pattern.CASE_INSENSITIVE);
+
+    // the reference SCT file that we would like to compare the students' models to
+    private static final String referenceSctFilenameInRootDir = "REFERENCE." + SCT_FILE_EXTENSION;
 
     /**
      * Setting the Logger
@@ -254,6 +262,12 @@ public class DoRemoJobs {
         return project.getFile(sgenFilePathInBundle).exists();
     }
 
+    /**
+     * Check if the Yakindu .sgen file exists in the project - throw an exception in case it's missing.
+     * 
+     * @param project
+     * @throws YakinduSGenFileNotFoundException
+     */
     public void checkExistenceOfSGenFileInIProject(IProject project) throws YakinduSGenFileNotFoundException {
         logger.info("Checking if the sgen file exists in the project called '" + project.getName() + "' at '"
         // + project.getRawLocationURI() + "'...");
@@ -269,6 +283,13 @@ public class DoRemoJobs {
         logger.info("OK, the sgen file exists in '" + project.getName() + "'.");
     }
 
+    /**
+     * Check if the .sct file exists in the root directory of all the projects - throw an exception in case it's missing.
+     * 
+     * @param projectsRootDirectoryPath
+     * @param sctFileName
+     * @throws YakinduSCTFileNotFoundException
+     */
     public void checkExistenceOfSCTFileInRootDirectory(Path projectsRootDirectoryPath, String sctFileName)
             throws YakinduSCTFileNotFoundException {
         Path sctFilePathInRootDirectory = projectsRootDirectoryPath.resolve(sctFileName);
@@ -291,8 +312,10 @@ public class DoRemoJobs {
      */
     public boolean sctFileExistsInRootDirectory(Path projectsRootDirectoryPath, String sctFilename) {
         Path sctFilePathInRootDirectory = projectsRootDirectoryPath.resolve(sctFilename);
-        logger.info("Checking if '" + sctFilename + "' exists in '" + sctFilePathInRootDirectory.toUri() + "'...");
-        return Files.exists(sctFilePathInRootDirectory);
+        boolean sctFileExists = Files.exists(sctFilePathInRootDirectory);
+        logger.info("Checking if '" + sctFilename + "' exists in '" + sctFilePathInRootDirectory.toUri() + "'...: "
+                + sctFileExists);
+        return sctFileExists;
     }
 
     /**
@@ -316,8 +339,8 @@ public class DoRemoJobs {
             return false;
         }
 
-        String statechartTargetFilename = "homework" + sctFileNameInRootDirectory;// e.g.
-        // "homeworkA3BC1G.sct"
+        // e.g. "homeworkA3BC1G.sct"
+        String statechartTargetFilename = "homework" + sctFileNameInRootDirectory;
         // Path iProjectPath = Paths.get(iProject.getRawLocationURI());
         Path iProjectPath = Paths.get(iProject.getLocationURI());
         Path statechartTargetPath = iProjectPath.resolve(statechartTargetFilename);
@@ -368,7 +391,8 @@ public class DoRemoJobs {
     /**
      * Run all the tests on a given project.
      * 
-     * TODO: fix waiting for full build, enabling cleaning request again, making it work even without automatic build ticked...
+     * TODO: fix waiting for full build (run build only for the selected projects), 
+     * enable clean request again, making it work even without automatic build ticked...
      * 
      * @param projectsRootDirectoryPath
      * @param neptunCode
@@ -376,14 +400,20 @@ public class DoRemoJobs {
      * @return
      * @throws Exception
      */
-    public HomeworkResult runTestsOnProject(Path projectsRootDirectoryPath, String neptunCode,
-            IProject currentIProject) {
+    public HomeworkResult runTestsOnProject(Path projectsRootDirectoryPath, String neptunCode, IProject currentIProject,
+            HashMap<Class<? extends EObject>, ArrayList<EObject>> referenceModelElementsInAMap) {
 
-        // TODO: feladatokat valahonnan beállítani
+        // TODO: hallgató feladatait valahonnan betölteni
         String tasks = "";
+        // forbidden elements in the model
         LinkedList<ForbiddenElement> forbiddenElementsInStatechart = null;
+        // missing elements in the interface definition based on a reference statechart
+        ArrayList<MissingEObject> missingElementsInInterface = null;
+        // the JUnit test's results
         Result result = null;
+        // check if the SCT file exists in the root directory (where all the projects are)
         boolean sctFileExistsInRootDirectory = false;
+        // has an exception been thrown and caught?
         Exception exceptionThrown = null;
 
         try {
@@ -415,11 +445,19 @@ public class DoRemoJobs {
 
                 copySctFile(projectsRootDirectoryPath, sctFileNameInRootDirectory, currentIProject);
 
-                checkBuildErrors(currentIProject);
-
                 buildProject(currentIProject, nullProgressMonitor);
 
-                forbiddenElementsInStatechart = getForbiddenElementsInStatechart(currentIProject, neptunCode);
+                // forbiddenElementsInStatechart = getForbiddenElementsInStatechart(currentIProject, neptunCode);                
+                Statechart statechartFromIProject = getStatechartFromIProject(currentIProject,
+                        // example: homeworkABC123.sct
+                        "./homework" + neptunCode + "." + SCT_FILE_EXTENSION);
+                HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap = StatechartAnalyzer
+                        .collectModelElementsIntoMap(statechartFromIProject);
+                forbiddenElementsInStatechart = StatechartAnalyzer.getForbiddenElements(modelElementsInAMap);
+
+                missingElementsInInterface = StatechartAnalyzer
+                        .getMissingElementsInInterface(referenceModelElementsInAMap, modelElementsInAMap);
+                checkBuildErrors(currentIProject);
 
                 result = testStatechart(currentIProject);
             }
@@ -432,7 +470,7 @@ public class DoRemoJobs {
         }
 
         HomeworkResult homeworkResult = new HomeworkResult(neptunCode, sctFileExistsInRootDirectory,
-                forbiddenElementsInStatechart, result, tasks, exceptionThrown);
+                forbiddenElementsInStatechart, missingElementsInInterface, result, tasks, exceptionThrown);
         return homeworkResult;
     }
 
@@ -491,16 +529,14 @@ public class DoRemoJobs {
             buildErrors.append("(file: '" + projectRelativePath.toString() + "', line nr.: "
                     + marker.getAttribute(IMarker.LINE_NUMBER) + "): " + marker.getAttribute(IMarker.MESSAGE) + " ");
 
-            logMsg += 
-                    "Problem marker message: '" + marker.getAttribute(IMarker.MESSAGE) 
-                    + "', severity: '" + marker.getAttribute(IMarker.SEVERITY, Integer.MAX_VALUE)
-                    + "', line number: '" + marker.getAttribute(IMarker.LINE_NUMBER) 
-                    + "', source id: '" + marker.getAttribute(IMarker.SOURCE_ID) 
-                    + "', resource's name: '" + markerResource.getName()
-                    + "', resource's project relative path: '" + projectRelativePath.toString()
-                    + "', resource's URI: '" + markerResource.getLocationURI() 
-                    + "', resource's RAW URI: '" + markerResource.getRawLocationURI() + "', type: " + marker.getType();
-            
+            logMsg += "Problem marker message: '" + marker.getAttribute(IMarker.MESSAGE) + "', severity: '"
+                    + marker.getAttribute(IMarker.SEVERITY, Integer.MAX_VALUE) + "', line number: '"
+                    + marker.getAttribute(IMarker.LINE_NUMBER) + "', source id: '"
+                    + marker.getAttribute(IMarker.SOURCE_ID) + "', resource's name: '" + markerResource.getName()
+                    + "', resource's project relative path: '" + projectRelativePath.toString() + "', resource's URI: '"
+                    + markerResource.getLocationURI() + "', resource's RAW URI: '" + markerResource.getRawLocationURI()
+                    + "', type: " + marker.getType();
+
             if (!isJavaCodeRelatedProblem) {// if the problem is not Java code specific, emphasize it
                 logger.severe(logMsg);
             } else {
@@ -572,8 +608,8 @@ public class DoRemoJobs {
      * @param remoIProjects
      * @throws Exception
      */
-    public void runTestsOnProjects(TreeMap<String, IProject> remoIProjects) throws Exception {
-        runTestsOnProjects(remoIProjects, new NullProgressMonitor());
+    public Path runTestsOnProjects(TreeMap<String, IProject> remoIProjects) throws Exception {
+        return runTestsOnProjects(remoIProjects, new NullProgressMonitor());
     }
 
     /**
@@ -582,7 +618,7 @@ public class DoRemoJobs {
      * @param remoIProjects
      * @throws Exception
      */
-    public void runTestsOnProjects(TreeMap<String, IProject> remoIProjects, IProgressMonitor monitor) throws Exception {
+    public Path runTestsOnProjects(TreeMap<String, IProject> remoIProjects, IProgressMonitor monitor) throws Exception {
         logger.info("Executing statechart analyzation job (ReMo)...");
 
         if (remoIProjects.isEmpty()) {
@@ -609,10 +645,18 @@ public class DoRemoJobs {
         Charset charset = Charset.isSupported(charsetNameForExcel) ? Charset.forName(charsetNameForExcel)
                 : StandardCharsets.UTF_8;
 
+        // load reference statechart for comparison with the students' uploaded statecharts
+        Statechart referenceStatechartFromRoot = getReferenceStatechartFromRoot(projectsRootDirectoryPath);
+        HashMap<Class<? extends EObject>, ArrayList<EObject>> referenceModelElementsInAMap = StatechartAnalyzer
+                .collectModelElementsIntoMap(referenceStatechartFromRoot);
+
+        int numberOfProjects = iProjectsEntrySet.size();
+        int numberOfSuccessfulProjects = 0;
+        
         try (BufferedWriter csvWriter = Files.newBufferedWriter(CSV_targetFilePath, charset)) {
             monitor.beginTask("Starting to process projects...", iProjectsEntrySet.size());
 
-            // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
+            // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Hiányzó elemek az interfészben;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
             csvWriter.append("Dátum");
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Neptun-kód");
@@ -622,6 +666,8 @@ public class DoRemoJobs {
             csvWriter.append("Beadott");
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Tiltott elemek");
+            csvWriter.append(CSV_COMMA_DELIMITER);
+            csvWriter.append("Hiányzó elemek az interfészben");
             csvWriter.append(CSV_COMMA_DELIMITER);
             csvWriter.append("Teszthibák");
             csvWriter.append(CSV_COMMA_DELIMITER);
@@ -653,7 +699,7 @@ public class DoRemoJobs {
                     // the number of tests run
                     int runCount = 0;
                     HomeworkResult homeworkResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode,
-                            currentIProject);
+                            currentIProject, referenceModelElementsInAMap);
 
                     monitor.worked(1);
 
@@ -681,6 +727,7 @@ public class DoRemoJobs {
 
                     String testFailureText = "-";
                     String forbiddenElementsText = "-";
+                    String missingElementsInInterfaceText = "-";
 
                     Result testStatechartResult = homeworkResult.getTestResult();
 
@@ -691,7 +738,7 @@ public class DoRemoJobs {
                         }
                         testFailureText = (testFailureMessages.length() > 0
                                 ? testFailureMessages.replace(NEW_LINE, " == ").replace("\\r", " == ") : "-");
-                        
+
                         // true if all tests succeeded
                         wasSuccessful = testStatechartResult.wasSuccessful();
                         // the number of tests that failed during the run
@@ -702,10 +749,11 @@ public class DoRemoJobs {
                         runCount = testStatechartResult.getRunCount();
                     }
 
-                    LinkedList<ForbiddenElement> staticAnalysisResult = homeworkResult.getStaticAnalysisResult();
-                    if (staticAnalysisResult != null) {
+                    LinkedList<ForbiddenElement> staticAnalysisResultForbiddenElements = homeworkResult
+                            .getForbiddenElementsInModel();
+                    if (staticAnalysisResultForbiddenElements != null) {
                         forbiddenElementsText = "";
-                        for (ForbiddenElement forbiddenElement : staticAnalysisResult) {
+                        for (ForbiddenElement forbiddenElement : staticAnalysisResultForbiddenElements) {
                             if (!"".equals(forbiddenElementsText)) {// ha van előző üzenet is, elválasztjuk
                                 forbiddenElementsText += " | ";
                             }
@@ -713,18 +761,38 @@ public class DoRemoJobs {
                         }
                     }
 
-                    String uploadedSctFileMessage = (homeworkResult.isSctUploaded() ? "Igen" : "Nem");
+                    ArrayList<MissingEObject> missingElementsInInterface = homeworkResult
+                            .getMissingElementsInInterface();
 
-                    // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
+                    if (missingElementsInInterface != null) {
+                        missingElementsInInterfaceText = "";
+                        for (MissingEObject missingEObject : missingElementsInInterface) {
+                            if (!"".equals(missingElementsInInterfaceText)) {// ha van előző üzenet is, elválasztjuk
+                                missingElementsInInterfaceText += " | ";
+                            }
+                            missingElementsInInterfaceText += missingEObject.getMessage();
+                        }
+                    }
+
+                    String uploadedSctFileMessage = (homeworkResult.isSctUploaded() ? "Igen" : "Nem");
+                    boolean noProblemsDetectedInProject = (wasSuccessful && exceptionThrown == null);
+                    
+                    if(noProblemsDetectedInProject){
+                        numberOfSuccessfulProjects++;
+                    }
+                    
+                    // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Hiányzó elemek az interfészben;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
                     csvWriter.append(dateFormatColumn);
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(neptunCode);
-                    csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append((wasSuccessful && exceptionThrown == null) ? "Siker" : "Hiba");
+                    csvWriter.append(CSV_COMMA_DELIMITER);                    
+                    csvWriter.append(noProblemsDetectedInProject ? "Siker" : "Hiba");
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(uploadedSctFileMessage);
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(forbiddenElementsText);
+                    csvWriter.append(CSV_COMMA_DELIMITER);
+                    csvWriter.append(missingElementsInInterfaceText);
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(testFailureText);
                     csvWriter.append(CSV_COMMA_DELIMITER);
@@ -753,8 +821,10 @@ public class DoRemoJobs {
             monitor.done();
         }
 
+        logger.info(numberOfSuccessfulProjects + " projects were successful out of "+numberOfProjects);
         logger.info("(System Modeling) End of processing.");
 
+        return CSV_targetFilePath;
     }
 
     @SuppressWarnings("unused")
@@ -819,7 +889,7 @@ public class DoRemoJobs {
 
             return true;
             // return copySctFile();
-        } );
+        });
         //
         // remoTasks.put("Indicating a clean request...", () -> {
         // return cleanProject(remoProject, new
@@ -1067,6 +1137,17 @@ public class DoRemoJobs {
         return yakinduGeneratorExecutorModified.loadResourceWithInjector(sgenFile);
     }
 
+    /**
+     * Get the Yakindu .sgen file as a GeneratorModel object. This way its content is parseable.
+     * 
+     * TODO: in case a file gets loaded with this method, it gets locked (?) and after that the 
+     * code generation can not be raised from the UI, and the Yakindu throws an exception for the
+     * sgen file.
+     * 
+     * @param project
+     * @return
+     * @throws Exception
+     */
     public GeneratorModel getYakinduSgenFileAsGeneratorModel(IProject project) throws Exception {
         Resource resource = getYakinduSgenFileAsLoadedResource(project);
 
@@ -1076,6 +1157,18 @@ public class DoRemoJobs {
         return (GeneratorModel) resource.getContents().get(0);
     }
 
+    /**
+     * Get the "targetFolder" property in the feature called "Outlet" from the .sgen file
+     * which determines the directory of the generated codebase.
+     * 
+     * TODO: in case a file gets loaded with this method, it gets locked (?) and after that the 
+     * code generation can not be raised from the UI, and the Yakindu throws an exception for the
+     * sgen file.
+     * 
+     * @param project
+     * @return
+     * @throws Exception
+     */
     public File getYakinduTargetFolderAsFile(IProject project) throws Exception {
         GeneratorModel model = getYakinduSgenFileAsGeneratorModel(project);
         final EList<GeneratorEntry> entries = model.getEntries();
@@ -1165,9 +1258,13 @@ public class DoRemoJobs {
      * @throws Exception
      */
     public boolean buildProject(IProject project, IProgressMonitor monitor) throws Exception {
-        org.yakindu.sct.model.sgraph.SGraphPackage.eINSTANCE.getClass();
-
         logger.info("Building project '" + project.getName() + "'...");
+
+        // "Creates, registers, and initializes the <b>Package</b> for this model, 
+        //  and for any others upon which it depends."
+        // @see org.yakindu.sct.model.sgraph.impl.SGraphPackageImpl.init();
+        // SGraphPackage einstance = org.yakindu.sct.model.sgraph.SGraphPackage.eINSTANCE;
+
         // open if necessary
         if (!project.isOpen()) {
             project.open(monitor);
@@ -1278,10 +1375,10 @@ public class DoRemoJobs {
      * @throws IOException
      */
     public static void listFilesInDirectory(Path path) throws IOException {
-        if(!Files.isDirectory(path)) {
+        if (!Files.isDirectory(path)) {
             return;
         }
-        
+
         try (java.nio.file.DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
             for (Path entry : stream) {
                 if (Files.isDirectory(entry)) {
@@ -1468,22 +1565,47 @@ public class DoRemoJobs {
     /**
      * Get the SCT file (the statechart model) from the project
      * 
-     * @param bundleName
+     * @param projectName
      * @param sctFilePathInBundle
      * @return
      * @throws Exception
      */
-    public Statechart getStatechartFromBundle(String bundleName, String sctFilePathInBundle) throws Exception {
-        IProject project = getProject(bundleName);
+    public Statechart getStatechartFromProject(String projectName, String sctFilePathInBundle) throws Exception {
+        IProject project = getProject(projectName);
         IFile file = project.getFile(sctFilePathInBundle);
         Statechart statechartFromIFile = StatechartAnalyzer.getStatechartFromIFile(file);
 
         if (statechartFromIFile == null) {
-            throw new Exception("Statechart could not be parsed from the file at path '"
-                    // + file.getRawLocationURI().getPath() + "'!");
-                    + file.getLocationURI().getPath() + "'!");
+            throw new Exception(
+                    "Statechart could not be parsed from the file at path '" + file.getLocationURI().getPath() + "'!");
         }
         return statechartFromIFile;
+    }
+
+    /**
+     * Get the reference SCT file from the root directory of the projects
+     * 
+     * @return
+     * @throws Exception 
+     */
+    public Statechart getReferenceStatechartFromRoot(Path projectsRootDirectoryPath) throws Exception {
+        // path to the reference SCT file that we would like to compare the students' models to
+        final Path referenceSctFilePath = projectsRootDirectoryPath.resolve(referenceSctFilenameInRootDir);
+        final boolean referenceSctFileExists = Files.exists(referenceSctFilePath);
+        logger.info("Files.exists(referenceSctFilePath): " + referenceSctFileExists);
+        logger.info("referenceSctFilePath.toUri(): " + referenceSctFilePath.toUri());
+        if (!referenceSctFileExists) {
+            throw new Exception("The reference SCT file called '" + referenceSctFilenameInRootDir + "' at '"
+                    + referenceSctFilePath.toUri() + "' does not exist!");
+        }
+
+        Statechart statechartFromPath = StatechartAnalyzer.getStatechartFromPath(referenceSctFilePath);
+
+        if (statechartFromPath == null) {
+            throw new Exception(
+                    "Statechart could not be parsed from the file at path '" + referenceSctFilePath.toUri() + "'!");
+        }
+        return statechartFromPath;
     }
 
     /**
@@ -1499,9 +1621,8 @@ public class DoRemoJobs {
         Statechart statechartFromIFile = StatechartAnalyzer.getStatechartFromIFile(file);
 
         if (statechartFromIFile == null) {
-            throw new Exception("Statechart could not be parsed from the file at path '"
-                    // + file.getRawLocationURI().getPath() + "'!");
-                    + file.getLocationURI().getPath() + "'!");
+            throw new Exception(
+                    "Statechart could not be parsed from the file at path '" + file.getLocationURI().getPath() + "'!");
         }
         return statechartFromIFile;
     }

@@ -3,11 +3,11 @@
  */
 package hu.bme.mit.remo.scverif.processing.sct;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.emf.common.util.EList;
@@ -15,12 +15,13 @@ import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.yakindu.base.expressions.expressions.impl.ElementReferenceExpressionImpl;
-import org.yakindu.base.expressions.expressions.impl.FeatureCallImpl;
+import org.yakindu.base.base.NamedElement;
+import org.yakindu.base.expressions.expressions.ElementReferenceExpression;
+import org.yakindu.base.expressions.expressions.FeatureCall;
 import org.yakindu.sct.model.sgraph.Declaration;
 import org.yakindu.sct.model.sgraph.Effect;
+import org.yakindu.sct.model.sgraph.Entry;
 import org.yakindu.sct.model.sgraph.Event;
 import org.yakindu.sct.model.sgraph.Reaction;
 import org.yakindu.sct.model.sgraph.ReactionProperty;
@@ -32,23 +33,16 @@ import org.yakindu.sct.model.sgraph.Transition;
 import org.yakindu.sct.model.sgraph.Trigger;
 import org.yakindu.sct.model.sgraph.Variable;
 import org.yakindu.sct.model.sgraph.Vertex;
-import org.yakindu.sct.model.sgraph.impl.EntryImpl;
-import org.yakindu.sct.model.sgraph.impl.RegionImpl;
-import org.yakindu.sct.model.sgraph.impl.StateImpl;
-import org.yakindu.sct.model.sgraph.impl.TransitionImpl;
 import org.yakindu.sct.model.stext.stext.AlwaysEvent;
+import org.yakindu.sct.model.stext.stext.EventDefinition;
 import org.yakindu.sct.model.stext.stext.EventSpec;
 import org.yakindu.sct.model.stext.stext.InterfaceScope;
+import org.yakindu.sct.model.stext.stext.OperationDefinition;
 import org.yakindu.sct.model.stext.stext.ReactionTrigger;
+import org.yakindu.sct.model.stext.stext.RegularEventSpec;
+import org.yakindu.sct.model.stext.stext.SimpleScope;
 import org.yakindu.sct.model.stext.stext.TimeEventSpec;
-import org.yakindu.sct.model.stext.stext.impl.EventDefinitionImpl;
-import org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl;
-import org.yakindu.sct.model.stext.stext.impl.OperationDefinitionImpl;
-import org.yakindu.sct.model.stext.stext.impl.ReactionTriggerImpl;
-import org.yakindu.sct.model.stext.stext.impl.RegularEventSpecImpl;
-import org.yakindu.sct.model.stext.stext.impl.SimpleScopeImpl;
-import org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl;
-import org.yakindu.sct.model.stext.stext.impl.VariableDefinitionImpl;
+import org.yakindu.sct.model.stext.stext.VariableDefinition;
 
 /**
  * Class for the statecharts' static checkings
@@ -58,9 +52,9 @@ import org.yakindu.sct.model.stext.stext.impl.VariableDefinitionImpl;
  */
 public class StatechartAnalyzer {
     public static final Logger logger = Logger.getLogger("System Modeling Log");
-    
+
     private Statechart statechart;
-    private HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsCollector;
+    private HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap;
 
     public StatechartAnalyzer() {
         this.statechart = null;
@@ -68,27 +62,38 @@ public class StatechartAnalyzer {
 
     public StatechartAnalyzer(Statechart statechart) {
         setStatechart(statechart);
-    }
-
-    public static Statechart getStatechartFromIFile(IFile sctFile) {
+    }  
+    
+    public static Statechart getStatechartFromUri(URI sctFileURI) {
+//        sctFileURI.
+        
         // Loads the resource
-        ResourceSet resourceSet = new ResourceSetImpl();
-        URI fileURI = URI.createPlatformResourceURI(sctFile.getFullPath().toString(), false);
-        Resource res = resourceSet.getResource(fileURI, true);
+        ResourceSetImpl resourceSet = new ResourceSetImpl();
+        Resource res = resourceSet.getResource(sctFileURI, true);
 
         // Process SCT model
         for (EObject content : res.getContents()) {
-            // EObject content = res.getContents().get(0);
-            // if it's an implementation of the model object 'Statechart'.
-            if (content instanceof org.yakindu.sct.model.sgraph.impl.StatechartImpl) {
+            // check if it's an implementation of the model object 'Statechart'.
+            if (content instanceof Statechart) {
                 return (Statechart) content;
             }
             // if (content instanceof
-            // org.eclipse.gmf.runtime.notation.impl.DiagramImpl) {
+            // org.eclipse.gmf.runtime.notation.Diagram) {
             // // ez nem fog kelleni...
             // }
         }
-        return null;
+        return null;        
+    }
+    
+    public static Statechart getStatechartFromPath(Path sctFilePath) {
+        // now we need to create a file URI (not a platform resource URI)
+        URI sctFileURI = URI.createFileURI(sctFilePath.toUri().getPath());
+        return getStatechartFromUri(sctFileURI);
+    }
+    
+    public static Statechart getStatechartFromIFile(IFile sctFile) {
+        URI sctFileURI = URI.createPlatformResourceURI(sctFile.getFullPath().toString(), false);
+        return getStatechartFromUri(sctFileURI);
     }
 
     public boolean doesContainTimeEventReactionTrigger() {
@@ -98,8 +103,8 @@ public class StatechartAnalyzer {
         while (eAllContents.hasNext()) {
             EObject nextEObject = eAllContents.next();
 
-            //          boolean isContainingTimeEvent = (nextEObject.getClass().getName() == "org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl");
-            boolean isContainingTimeEvent = (nextEObject instanceof org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl);
+            //          boolean isContainingTimeEvent = (nextEObject.getClass().getName() == "org.yakindu.sct.model.stext.stext.TimeEventSpec");
+            boolean isContainingTimeEvent = (nextEObject instanceof org.yakindu.sct.model.stext.stext.TimeEventSpec);
             if (isContainingTimeEvent == true) {
                 return true;
             }
@@ -108,10 +113,10 @@ public class StatechartAnalyzer {
         return false;
     }
 
-    public void collectModelElementsIntoMap() {
+    public static HashMap<Class<? extends EObject>, ArrayList<EObject>> collectModelElementsIntoMap(Statechart statechart) {
         logger.info("collecting and inspecting model elements...\n\n");
 
-        modelElementsCollector = new HashMap<Class<? extends EObject>, ArrayList<EObject>>();
+        HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsMap = new HashMap<Class<? extends EObject>, ArrayList<EObject>>();
 
         TreeIterator<EObject> eAllContents = statechart.eAllContents();
 
@@ -119,10 +124,15 @@ public class StatechartAnalyzer {
             EObject nextEObject = eAllContents.next();
 
             Class<? extends EObject> nextEObjectClass = nextEObject.getClass();
-            ArrayList<EObject> elementList = modelElementsCollector.get(nextEObjectClass);
+            // get which model object it represents (we would like to get the interface,
+            // not the concrete implementation)
+            @SuppressWarnings("unchecked")
+            Class<? extends EObject> implementedInterfaceClassObject = (Class<? extends EObject>) nextEObjectClass.getInterfaces()[0];
+            // ArrayList<EObject> elementList = modelElementsMap.get(nextEObjectClass);
+            ArrayList<EObject> elementList = modelElementsMap.get(implementedInterfaceClassObject);
             if (elementList == null) {
                 elementList = new ArrayList<EObject>();
-                modelElementsCollector.put(nextEObjectClass, elementList);
+                modelElementsMap.put(implementedInterfaceClassObject, elementList);
             }
 
             // logger.info("adding: "+nextEObject.toString() + "\n");
@@ -132,25 +142,48 @@ public class StatechartAnalyzer {
 
         logger.info("\n\n");
 
-        //        ArrayList<? extends EObject> interfaceList = modelElementsCollector.get(org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl.class);
-        //        for (EObject currentInterfaceEObject : interfaceList) {
-        //            org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl currentInterface = (org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl) currentInterfaceEObject;
-        //            logger.info("currentInterface.getName(): " + currentInterface.getName()+"\n");
-        //        }
+        //                ArrayList<? extends EObject> interfaceList = modelElementsInAMap.get(org.yakindu.sct.model.stext.stext.InterfaceScope.class);
+        //                for (EObject currentInterfaceEObject : interfaceList) {
+        //                    org.yakindu.sct.model.stext.stext.InterfaceScope currentInterface = (org.yakindu.sct.model.stext.stext.InterfaceScope) currentInterfaceEObject;
+        //                    logger.info("currentInterface.getName(): " + currentInterface.getName()+"\n");
+        //                }
+        return modelElementsMap;
     }
 
     public LinkedList<ForbiddenElement> getForbiddenElements() {
         LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
+        
+        // always/oncycle keywords are forbidden
+        ArrayList<ReactionTrigger> reactionTriggers = getReactionTriggers();
+        if (reactionTriggers != null) {
+            for (ReactionTrigger reactionTrigger : reactionTriggers) {
+                forbiddenElementList.addAll(getForbiddenElementsInReactionTrigger(reactionTrigger));
+            }
+        }
+        
+        return forbiddenElementList;
+    }
+    
+    public static LinkedList<ForbiddenElement> getForbiddenElements(HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap) {
+        ArrayList<EObject> reactionTriggers = modelElementsInAMap.get(ReactionTrigger.class);
+        
+        LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
 
         // always/oncycle keywords are forbidden
-        ArrayList<ReactionTriggerImpl> reactionTriggers = getReactionTriggers();
         if (reactionTriggers != null) {
-            for (ReactionTriggerImpl reactionTriggerImpl : reactionTriggers) {
-                forbiddenElementList.addAll(checkReactionTrigger(reactionTriggerImpl));
+            for (EObject reactionTriggerEObject : reactionTriggers) {
+                ReactionTrigger reactionTrigger = (ReactionTrigger) reactionTriggerEObject;
+                forbiddenElementList.addAll(getForbiddenElementsInReactionTrigger(reactionTrigger));
             }
         }
 
-        return forbiddenElementList;
+        return forbiddenElementList;        
+    }
+    
+    public static LinkedList<ForbiddenElement> getForbiddenElements(Statechart statechart) {
+        HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap = collectModelElementsIntoMap(statechart);
+        
+        return getForbiddenElements(modelElementsInAMap);
     }
 
     /**
@@ -159,12 +192,12 @@ public class StatechartAnalyzer {
      * @param nameToLookFor
      * @return true if the statechart contains the event with the given name.
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.EventDefinitionImpl
+     * @see org.yakindu.sct.model.stext.stext.EventDefinition
      */
     public boolean hasEventDefinition(String nameToLookFor) {
-        ArrayList<EObject> eventList = modelElementsCollector.get(EventDefinitionImpl.class);
+        ArrayList<EObject> eventList = modelElementsInAMap.get(EventDefinition.class);
         for (EObject currentEventDefEObject : eventList) {
-            EventDefinitionImpl currentEvent = (EventDefinitionImpl) currentEventDefEObject;
+            EventDefinition currentEvent = (EventDefinition) currentEventDefEObject;
             if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
@@ -179,12 +212,12 @@ public class StatechartAnalyzer {
      * @param nameToLookFor
      * @return true if the statechart contains the interface with the given name.
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl
+     * @see org.yakindu.sct.model.stext.stext.InterfaceScope
      */
     public boolean hasInterfaceScope(String nameToLookFor) {
-        ArrayList<EObject> interfaceList = modelElementsCollector.get(InterfaceScopeImpl.class);
+        ArrayList<EObject> interfaceList = modelElementsInAMap.get(InterfaceScope.class);
         for (EObject currentEventDefEObject : interfaceList) {
-            InterfaceScopeImpl currentEvent = (InterfaceScopeImpl) currentEventDefEObject;
+            InterfaceScope currentEvent = (InterfaceScope) currentEventDefEObject;
             if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
@@ -199,12 +232,12 @@ public class StatechartAnalyzer {
      * @param nameToLookFor
      * @return true if the statechart contains the operation with the given name.
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.OperationDefinitionImpl
+     * @see org.yakindu.sct.model.stext.stext.OperationDefinition
      */
     public boolean hasOperationDefinition(String nameToLookFor) {
-        ArrayList<EObject> operationList = modelElementsCollector.get(OperationDefinitionImpl.class);
+        ArrayList<EObject> operationList = modelElementsInAMap.get(OperationDefinition.class);
         for (EObject currentEventDefEObject : operationList) {
-            OperationDefinitionImpl currentEvent = (OperationDefinitionImpl) currentEventDefEObject;
+            OperationDefinition currentEvent = (OperationDefinition) currentEventDefEObject;
             if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
@@ -219,12 +252,12 @@ public class StatechartAnalyzer {
      * @param nameToLookFor
      * @return true if the statechart contains the variable with the given name.
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.VariableDefinitionImpl
+     * @see org.yakindu.sct.model.stext.stext.VariableDefinition
      */
     public boolean hasVariableDefinition(String nameToLookFor) {
-        ArrayList<EObject> variableList = modelElementsCollector.get(VariableDefinitionImpl.class);
+        ArrayList<EObject> variableList = modelElementsInAMap.get(VariableDefinition.class);
         for (EObject currentEventDefEObject : variableList) {
-            VariableDefinitionImpl currentEvent = (VariableDefinitionImpl) currentEventDefEObject;
+            VariableDefinition currentEvent = (VariableDefinition) currentEventDefEObject;
             if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
@@ -239,12 +272,12 @@ public class StatechartAnalyzer {
      * @param nameToLookFor
      * @return true if the statechart contains the region with the given name.
      * 
-     * @see org.yakindu.sct.model.sgraph.impl.RegionImpl
+     * @see org.yakindu.sct.model.sgraph.Region
      */
     public boolean hasRegion(String nameToLookFor) {
-        ArrayList<EObject> regionList = modelElementsCollector.get(RegionImpl.class);
+        ArrayList<EObject> regionList = modelElementsInAMap.get(Region.class);
         for (EObject currentEventDefEObject : regionList) {
-            RegionImpl currentEvent = (RegionImpl) currentEventDefEObject;
+            Region currentEvent = (Region) currentEventDefEObject;
             if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
@@ -259,12 +292,12 @@ public class StatechartAnalyzer {
      * @param nameToLookFor
      * @return true if the statechart contains the entry with the given name.
      * 
-     * @see org.yakindu.sct.model.sgraph.impl.EntryImpl
+     * @see org.yakindu.sct.model.sgraph.Entry
      */
     public boolean hasEntry(String nameToLookFor) {
-        ArrayList<EObject> entryList = modelElementsCollector.get(EntryImpl.class);
+        ArrayList<EObject> entryList = modelElementsInAMap.get(Entry.class);
         for (EObject currentEventDefEObject : entryList) {
-            EntryImpl currentEvent = (EntryImpl) currentEventDefEObject;
+            Entry currentEvent = (Entry) currentEventDefEObject;
             if (currentEvent.getName().equals(nameToLookFor)) {
                 return true;
             }
@@ -276,191 +309,192 @@ public class StatechartAnalyzer {
     /**
      * Get interfaces in the model
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.InterfaceScopeImpl
+     * @see org.yakindu.sct.model.stext.stext.InterfaceScope
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<InterfaceScope> getInterfaces() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(InterfaceScopeImpl.class);
+        return (ArrayList) modelElementsInAMap.get(InterfaceScope.class);
     }
 
     /**
      * Get events in the model
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.EventDefinitionImpl
+     * @see org.yakindu.sct.model.stext.stext.EventDefinition
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<EventDefinitionImpl> getEvents() {
+    public ArrayList<EventDefinition> getEvents() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(EventDefinitionImpl.class);
+        return (ArrayList) modelElementsInAMap.get(EventDefinition.class);
     }
 
     /**
      * Get operations in the model
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.OperationDefinitionImpl
+     * @see org.yakindu.sct.model.stext.stext.OperationDefinition
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<OperationDefinitionImpl> getOperations() {
+    public ArrayList<OperationDefinition> getOperations() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(OperationDefinitionImpl.class);
+        return (ArrayList) modelElementsInAMap.get(OperationDefinition.class);
     }
 
     /**
      * Get variables in the model
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.VariableDefinitionImpl
+     * @see org.yakindu.sct.model.stext.stext.VariableDefinition
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<VariableDefinitionImpl> getVariables() {
+    public ArrayList<VariableDefinition> getVariables() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(VariableDefinitionImpl.class);
+        return (ArrayList) modelElementsInAMap.get(VariableDefinition.class);
     }
 
     /**
      * Get SimpleScopes in the model
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.SimpleScopeImpl
+     * @see org.yakindu.sct.model.stext.stext.SimpleScope
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<SimpleScopeImpl> getSimpleScopes() {
+    public ArrayList<SimpleScope> getSimpleScopes() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(SimpleScopeImpl.class);
+        return (ArrayList) modelElementsInAMap.get(SimpleScope.class);
     }
 
     /**
      * Get ReactionTriggers in the model
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.ReactionTriggerImpl
+     * @see org.yakindu.sct.model.stext.stext.ReactionTrigger
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<ReactionTriggerImpl> getReactionTriggers() {
+    public ArrayList<ReactionTrigger> getReactionTriggers() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(ReactionTriggerImpl.class);
+        return (ArrayList) modelElementsInAMap.get(ReactionTrigger.class);
     }
 
     /**
      * Get RegularEvents in the model
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.RegularEventSpecImpl
+     * @see org.yakindu.sct.model.stext.stext.RegularEventSpec
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<RegularEventSpecImpl> getRegularEventSpecs() {
+    public ArrayList<RegularEventSpec> getRegularEventSpecs() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(RegularEventSpecImpl.class);
+        return (ArrayList) modelElementsInAMap.get(RegularEventSpec.class);
     }
 
     /**
      * Get TimeEventSpecs in the model
      * 
-     * @see org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl
+     * @see org.yakindu.sct.model.stext.stext.TimeEventSpec
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<TimeEventSpecImpl> getTimeEventSpecs() {
+    public ArrayList<TimeEventSpec> getTimeEventSpecs() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(TimeEventSpecImpl.class);
+        return (ArrayList) modelElementsInAMap.get(TimeEventSpec.class);
     }
 
     /**
      * Get entries in the model
      * 
-     * @see org.yakindu.sct.model.sgraph.impl.EntryImpl
+     * @see org.yakindu.sct.model.sgraph.Entry
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<EntryImpl> getEntries() {
+    public ArrayList<Entry> getEntries() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(EntryImpl.class);
+        return (ArrayList) modelElementsInAMap.get(Entry.class);
     }
 
     /**
      * Get regions in the model
      * 
-     * @see org.yakindu.sct.model.sgraph.impl.RegionImpl
+     * @see org.yakindu.sct.model.sgraph.Region
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<RegionImpl> getRegions() {
+    public ArrayList<Region> getRegions() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(RegionImpl.class);
+        return (ArrayList) modelElementsInAMap.get(Region.class);
     }
 
     /**
      * Get transitions in the model
      * 
-     * @see org.yakindu.sct.model.sgraph.impl.TransitionImpl
+     * @see org.yakindu.sct.model.sgraph.Transition
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<TransitionImpl> getTransitions() {
+    public ArrayList<Transition> getTransitions() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(TransitionImpl.class);
+        return (ArrayList) modelElementsInAMap.get(Transition.class);
     }
 
     /**
      * Get transitions in the model
      * 
-     * @see org.yakindu.sct.model.sgraph.impl.StateImpl
+     * @see org.yakindu.sct.model.sgraph.State
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<StateImpl> getStates() {
+    public ArrayList<State> getStates() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(StateImpl.class);
+        return (ArrayList) modelElementsInAMap.get(State.class);
     }
 
     /**
      * Get FeatureCalls in the model
      * 
-     * @see org.yakindu.sct.model.sgraph.impl.FeatureCallImpl
+     * @see org.yakindu.sct.model.sgraph.FeatureCall
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<FeatureCallImpl> getFeatureCalls() {
+    public ArrayList<FeatureCall> getFeatureCalls() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(FeatureCallImpl.class);
+        return (ArrayList) modelElementsInAMap.get(FeatureCall.class);
     }
 
     /**
      * Get ElementReferenceExpressions in the model
      * 
-     * @see org.yakindu.sct.model.sgraph.impl.ElementReferenceExpressionImpl
+     * @see org.yakindu.sct.model.sgraph.ElementReferenceExpression
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<ElementReferenceExpressionImpl> getElementReferenceExpressions() {
+    public ArrayList<ElementReferenceExpression> getElementReferenceExpressions() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsCollector.get(ElementReferenceExpressionImpl.class);
+        return (ArrayList) modelElementsInAMap.get(ElementReferenceExpression.class);
     }
 
     /**
      * Get the map containing all the elements in the model as Class-EObject pairs
+     * (Class is the interface's class, not the implementation (which ends with *Impl)!) 
      * @return
      */
-    public HashMap<Class<? extends EObject>, ArrayList<EObject>> getModelElementsCollector() {
-        return modelElementsCollector;
+    public HashMap<Class<? extends EObject>, ArrayList<EObject>> getModelElementsInAMap() {
+        return modelElementsInAMap;
     }
 
     /**
@@ -473,15 +507,18 @@ public class StatechartAnalyzer {
      * @see http://yakindu.eclipselabs.org.codespot.com/svn-history/r2842/SCT2/trunk/plugins/org.yakindu.sct.model.stext/src/org/yakindu/sct/model/stext/validation/STextJavaValidator.java
      * @see org.yakindu.sct.model.stext.stext.StextPackage#getAlwaysEvent()
      */
-    public LinkedList<ForbiddenElement> checkReactionTrigger(ReactionTrigger reactionTrigger) {
+    public static LinkedList<ForbiddenElement> getForbiddenElementsInReactionTrigger(ReactionTrigger reactionTrigger) {
         EList<EventSpec> triggers = reactionTrigger.getTriggers();
 
         LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
 
+        // check if no trigger has been attached to the edge
         if (triggers == null || triggers.isEmpty()) {
             EObject eContainer = reactionTrigger.eContainer();
-            
-            if(eContainer instanceof Transition){
+
+            // we deny the usage of transitions without triggers (except for pseudostates like choices)
+            // - these are also mapped to AlwaysEvent like the usage of "always" or "oncycle" keywords
+            if (eContainer instanceof Transition) {
                 Transition containerTransition = (Transition) reactionTrigger.eContainer();
                 Vertex sourceVertex = containerTransition.getSource();
 
@@ -490,9 +527,8 @@ public class StatechartAnalyzer {
                     String sourceVertexName = sourceVertex.getName();
                     forbiddenElementList.add(new ForbiddenElement(
                             "Trigger can not be empty! (source vertex name: " + sourceVertexName + ")"));
-                }                
-            }
-            else if(eContainer instanceof State){ // akkor egy csúcsban van benne a belső állapotátmenet (beleírta a dobozba)
+                }
+            } else if (eContainer instanceof State) {// akkor egy csúcsban van benne a belső állapotátmenet (beleírta a dobozba)
                 Vertex sourceVertex = (Vertex) eContainer;
 
                 // it's only forbidden if its parent is a State (there are cases where Pseudostates are allowed)
@@ -500,8 +536,8 @@ public class StatechartAnalyzer {
                     String sourceVertexName = sourceVertex.getName();
                     forbiddenElementList.add(new ForbiddenElement(
                             "Trigger can not be empty! (source vertex name: " + sourceVertexName + ")"));
-                }                
-                
+                }
+
             }
         }
 
@@ -522,6 +558,9 @@ public class StatechartAnalyzer {
      * @param statechart
      */
     public void processStatechart() {
+        logger.info("collect and inspect model elements");
+        modelElementsInAMap = collectModelElementsIntoMap(statechart);
+
         String nameOfStatechart = statechart.getName();
 
         LinkedList<ForbiddenElement> checkForbiddenElements = getForbiddenElements();
@@ -577,11 +616,8 @@ public class StatechartAnalyzer {
             processScope(scope);
         }
 
-        logger.info(
-                "does it contain time event reaction trigger? --> " + doesContainTimeEventReactionTrigger() + "\n");
+        logger.info("does it contain time event reaction trigger? --> " + doesContainTimeEventReactionTrigger() + "\n");
 
-        logger.info("collect and inspect model elements");
-        collectModelElementsIntoMap();
     }
 
     private void processReaction(Reaction reaction) {
@@ -601,7 +637,7 @@ public class StatechartAnalyzer {
     }
 
     private void processTrigger(Trigger trigger) {
-        LinkedList<ForbiddenElement> forbiddenElementList = checkReactionTrigger((ReactionTrigger) trigger);
+        LinkedList<ForbiddenElement> forbiddenElementList = getForbiddenElementsInReactionTrigger((ReactionTrigger) trigger);
 
         for (ForbiddenElement forbiddenElement : forbiddenElementList) {
             logger.info("forbidden element has been found: " + forbiddenElement.getMessage() + "\n");
@@ -613,7 +649,7 @@ public class StatechartAnalyzer {
         //            System.out.println("eObject.toString(): " + eObject.toString());
         //            System.out.println("eObject.eClass().getClass().getName(): " + eObject.eClass().getClass().getName());
         //        }
-        // org.yakindu.sct.model.stext.stext.impl.TimeEventSpecImpl
+        // org.yakindu.sct.model.stext.stext.TimeEventSpec
         TreeIterator<EObject> eAllContents = trigger.eAllContents();
         while (eAllContents.hasNext()) {
             EObject eObject = eAllContents.next();
@@ -689,8 +725,8 @@ public class StatechartAnalyzer {
         }
 
         Region parentRegion = vertex.getParentRegion();
-        logger.info("»» current vertexName: '" + vertexName + "'"
-                + (vertexName.length() == 0 ? " (entry state!)" : "") + "\n");
+        logger.info("»» current vertexName: '" + vertexName + "'" + (vertexName.length() == 0 ? " (entry state!)" : "")
+                + "\n");
         logger.info(parentRegion.toString());
 
         logger.info("\n--> Incoming transitions:\n");
@@ -705,8 +741,8 @@ public class StatechartAnalyzer {
         String transitionSpecification = transition.getSpecification();
         Trigger transitionTrigger = transition.getTrigger();
 
-        logger.info("transition's target: '" + transitionTargetName + "',\n"
-                + "transition's specification: '" + transitionSpecification + "', " + "\n");
+        logger.info("transition's target: '" + transitionTargetName + "',\n" + "transition's specification: '"
+                + transitionSpecification + "', " + "\n");
 
         if (transitionTrigger != null) {
             logger.info("\t\ttransition's trigger: ");
@@ -715,15 +751,129 @@ public class StatechartAnalyzer {
         }
     }
 
+    /**
+     * Get missing elements in an interface compared to a reference interface.
+     * (The order of the parameters matter. :) )
+     * 
+     * @param referenceModelElementsInAMap
+     * @param toBeCheckedModelElementsInAMap
+     * @return
+     */
+    @SuppressWarnings("serial")
+    public static ArrayList<MissingEObject> getMissingElementsInInterface(
+            HashMap<Class<? extends EObject>, ArrayList<EObject>> referenceModelElementsInAMap,
+            HashMap<Class<? extends EObject>, ArrayList<EObject>> toBeCheckedModelElementsInAMap){
+
+        ArrayList<MissingEObject> missingElements = new ArrayList<>();
+        
+        // we would like to check the existence of the following NamedElements:
+        // InterfaceScope, EventDefinition, OperationDefinition, VariableDefinition
+        
+        // these have to get checked
+        ArrayList<Class<? extends NamedElement>> classesOfEObjectsToCheck = new ArrayList<Class<? extends NamedElement>>() {
+            {
+                add(InterfaceScope.class);
+                add(EventDefinition.class);
+                add(OperationDefinition.class);
+                add(VariableDefinition.class);
+            }
+        };
+
+        // user friendly names of these elements
+        HashMap<Class<? extends NamedElement>, String> modelElementUserFriendlyNameDictionary = new HashMap<Class<? extends NamedElement>, String>() {
+            {
+                put(InterfaceScope.class, "interface");
+                put(EventDefinition.class, "event");
+                put(OperationDefinition.class, "operation");
+                put(VariableDefinition.class, "variable");
+            }
+        };    
+        
+        modelElementUserFriendlyNameDictionary.forEach((k, v) -> {
+            System.out.println();
+        });
+        
+        for (Class<? extends NamedElement> currentEObjectClass : classesOfEObjectsToCheck) {
+            ArrayList<EObject> refInterfaceElements = referenceModelElementsInAMap.get(currentEObjectClass);
+            ArrayList<EObject> toBeCheckedInterfaceElements = toBeCheckedModelElementsInAMap.get(currentEObjectClass);
+
+            for (EObject currentRequiredEObject : refInterfaceElements) {
+                String currentRequiredEObjectName = ((NamedElement) currentRequiredEObject).getName();
+                boolean found = false;
+                for (EObject currentProvidedEObject : toBeCheckedInterfaceElements) {
+                    if (currentRequiredEObjectName.equals(((NamedElement) currentProvidedEObject).getName())) {
+                        found = true; // OK, found the element we were looking for
+                        break;
+                    }
+                }
+                if (!found) {
+                    // e.g. "The 'User' interface is missing!"
+                    String message = "The '" + currentRequiredEObjectName + "' "
+                            + modelElementUserFriendlyNameDictionary.get(currentEObjectClass) + " is missing!";
+                    missingElements.add(new MissingEObject(message, currentRequiredEObject));
+                }
+            }
+
+            // get required elements
+            ArrayList<String> requiredElementNames = new ArrayList<>();
+
+            // get provided elements
+            ArrayList<String> providedElementNames = new ArrayList<>();
+            for (EObject eObject : toBeCheckedInterfaceElements) {
+                // add the current name to a list of Strings
+                providedElementNames.add(((NamedElement) eObject).getName());
+            }
+
+            // check if the provided model contains the required elements
+            for (String currentElementName : requiredElementNames) {
+                if (!providedElementNames.contains(currentElementName)) {
+                    missingElements.add(new MissingEObject(currentElementName));
+                }
+            }
+        }
+        
+        return missingElements;
+    }
+    
+    /**
+     * Get missing elements in an interface compared to a reference interface.
+     * (The order of the parameters matter. :) )
+     * 
+     * @param referenceMinimalSct
+     * @param toBeCheckedSct
+     * @return
+     */
+    public ArrayList<MissingEObject> getMissingElementsInInterface(Statechart referenceMinimalSct,
+            Statechart toBeCheckedSct) {
+
+        HashMap<Class<? extends EObject>, ArrayList<EObject>> referenceModelElementsInAMap = collectModelElementsIntoMap(
+                referenceMinimalSct);
+        HashMap<Class<? extends EObject>, ArrayList<EObject>> toBeCheckedModelElementsInAMap = collectModelElementsIntoMap(
+                toBeCheckedSct);
+
+        return getMissingElementsInInterface(referenceModelElementsInAMap, toBeCheckedModelElementsInAMap);
+    }
+
+    /**
+     * Get statechart model
+     * @return
+     */
     public Statechart getStatechart() {
         return statechart;
     }
 
+    /**
+     * Set statechart
+     * @param statechart
+     */
     public void setStatechart(Statechart statechart) {
         this.statechart = statechart;
-        collectModelElementsIntoMap();
+        modelElementsInAMap = collectModelElementsIntoMap(statechart);
     }
 
+    /**
+     * 
+     */
     public void checkScopes() {
         logger.info("checkScopes:\n");
         EList<Scope> scopes = statechart.getScopes();

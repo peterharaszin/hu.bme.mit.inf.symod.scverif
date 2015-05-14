@@ -1,6 +1,7 @@
 package hu.bme.mit.remo.scverif.ui.handlers;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -19,7 +20,9 @@ import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 
@@ -84,17 +87,54 @@ public class RunTestsForProjectHandler extends AbstractHandler {
                     logger.info("matchingProjects.size(): " + matchingProjects.size());
 
                     DoRemoJobs doRemoJobs = new DoRemoJobs(shell);
-                    doRemoJobs.runTestsOnProjects(matchingProjects);
+                    Path summaryFilePath = doRemoJobs.runTestsOnProjects(matchingProjects);
+
+//                    Display.getDefault().asyncExec(new Runnable() {
+//                        public void run() {
+//                            MessageDialog.openInformation(shell, "Job done",
+//                                    "OK, running tests went fine for " + matchingProjects.size() + " projects."
+//                                            + " You can find the summary file at '" + summaryFilePath.toUri() + "'.");
+//                        }
+//                    });
+                    // http://eclipsesource.com/blogs/2014/03/24/how-to-use-swt-with-java-8/
+                    Display.getDefault().asyncExec(() -> {
+                        MessageDialog.openInformation(shell, "Job done",
+                            "OK, running tests went fine for " + matchingProjects.size() + " projects."
+                                    + " You can find the summary file at '" + summaryFilePath.toUri() + "'.");
+                        }
+                );
+                    
+
                 } catch (OperationCanceledException e) {
-                    logger.severe("Operation has been cancelled! " + e.getMessage());
-                    //                    logger.error("Operation has been cancelled! "+e.getMessage());
+                    String cancelMessage = "Running the tests has been canceled! ("+e.getMessage()+")";
+                    logger.severe(cancelMessage);
+                    // http://eclipsesource.com/blogs/2014/03/24/how-to-use-swt-with-java-8/
+                    Display.getDefault().asyncExec(new Runnable() {
+                        public void run() {
+                            MessageDialog.openInformation(shell, "Job canceled", cancelMessage);
+                        }
+                    });                    
                     return Status.CANCEL_STATUS;
                 } catch (Exception e) {
-                    logger.severe(
-                            //                    logger.error(
-                            "Something went wrong when executing homework analyzation (exception type: '"
-                                    + e.getClass().getName() + "'): " + e.getMessage());
+                    StackTraceElement[] stackTrace = e.getStackTrace();
+                    StackTraceElement firstStackTraceElement = stackTrace[0];
+
+                    String exceptionMessage = "Something went wrong when executing homework analyzation (exception type: '"
+                            + e.getClass().getName() + "'): " + e.getMessage() + " (file: '"
+                            + firstStackTraceElement.getFileName() + "', line: "
+                            + firstStackTraceElement.getLineNumber() + ", method name: "
+                            + firstStackTraceElement.getMethodName() + ")";
+                    logger.severe(exceptionMessage);
                     e.printStackTrace();
+
+                    Display.getDefault().syncExec(new Runnable() {
+                        @Override
+                        public void run() {
+                            MessageDialog.openError(shell, "Job finished with errors", exceptionMessage);
+                        }
+                    });
+
+                    return Status.CANCEL_STATUS;
                 }
 
                 return Status.OK_STATUS;

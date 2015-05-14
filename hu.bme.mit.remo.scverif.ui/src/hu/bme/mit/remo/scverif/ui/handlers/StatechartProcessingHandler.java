@@ -1,5 +1,6 @@
 package hu.bme.mit.remo.scverif.ui.handlers;
 
+import java.nio.file.Path;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -65,12 +66,13 @@ public class StatechartProcessingHandler extends AbstractHandler {
                     doRemoJobs.requestAutoBuildAndWaitForIt();
 
                     logger.info("============ OK, WAITING FOR AUTOBUILD DONE ==============");
-                    doRemoJobs.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
+                    Path summaryFilePath = doRemoJobs.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
 
                     // Display.getDefault().syncExec(new Runnable() {
                     Display.getDefault().asyncExec(new Runnable() {
                         public void run() {
-                            MessageDialog.openInformation(shell, "Job done", "OK, everything went fine");
+                            MessageDialog.openInformation(shell, "Job done", "OK, everything went fine for " + matchingProjectsInWorkspace.size() + " projects. "
+                                    + "You can find the summary file at '"+summaryFilePath.toUri()+"'.");
                         }
                     });
                 } catch (final Exception e) {

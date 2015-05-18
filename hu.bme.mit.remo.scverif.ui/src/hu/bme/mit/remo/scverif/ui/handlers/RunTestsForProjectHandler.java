@@ -86,8 +86,8 @@ public class RunTestsForProjectHandler extends AbstractHandler {
 
                     logger.info("matchingProjects.size(): " + matchingProjects.size());
 
-                    DoStatechartProcessing doRemoJobs = new DoStatechartProcessing(shell);
-                    Path summaryFilePath = doRemoJobs.runTestsOnProjects(matchingProjects);
+                    DoStatechartProcessing doStatechartProcessing = new DoStatechartProcessing(shell);
+                    Path summaryFilePath = doStatechartProcessing.runTestsOnProjects(matchingProjects);
 
 //                    Display.getDefault().asyncExec(new Runnable() {
 //                        public void run() {

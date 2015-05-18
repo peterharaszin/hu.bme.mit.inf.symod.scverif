@@ -26,8 +26,8 @@ public class SctTest {
 
 	@Before
 	public void setUp() throws Exception {
-//		DoStatechartProcessing doRemoJobs = new DoStatechartProcessing(null);
-//		statechartFromBundle = doRemoJobs.getStatechartFromBundle();
+//		DoStatechartProcessing doStatechartProcessing = new DoStatechartProcessing(null);
+//		statechartFromBundle = doStatechartProcessing.getStatechartFromBundle();
 //		stateChartAnalyzer.setStatechart(statechartFromBundle);
 	}
 

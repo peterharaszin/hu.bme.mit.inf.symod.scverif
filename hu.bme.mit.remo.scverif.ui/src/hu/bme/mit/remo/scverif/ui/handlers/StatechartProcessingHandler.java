@@ -50,7 +50,7 @@ public class StatechartProcessingHandler extends AbstractHandler {
                 // SubProgressMonitor subProgressMonitor = null;
                 
                 try {
-                    DoStatechartProcessing doRemoJobs = new DoStatechartProcessing(shell);
+                    DoStatechartProcessing doStatechartProcessing = new DoStatechartProcessing(shell);
                     TreeMap<String, IProject> matchingProjectsInWorkspace = DoStatechartProcessing.getMatchingProjectsInWorkspace();
                     
                     // subProgressMonitor = new SubProgressMonitor(monitor, 1);
@@ -60,13 +60,13 @@ public class StatechartProcessingHandler extends AbstractHandler {
                             + StatechartProcessingHandler.class.getProtectionDomain().getCodeSource().getLocation()
                             + "'.");
                     
-//                    doRemoJobs.cleanAndFullBuildAllProjectsInWorkspace(null);
-                    //                  doRemoJobs.waitForBuildWithJobChangeAdapter();
-                    // doRemoJobs.waitForAutoAndManualBuild();
-                    doRemoJobs.requestAutoBuildAndWaitForIt();
+//                    doStatechartProcessing.cleanAndFullBuildAllProjectsInWorkspace(null);
+                    //                  doStatechartProcessing.waitForBuildWithJobChangeAdapter();
+                    // doStatechartProcessing.waitForAutoAndManualBuild();
+                    doStatechartProcessing.requestAutoBuildAndWaitForIt();
 
                     logger.info("============ OK, WAITING FOR AUTOBUILD DONE ==============");
-                    Path summaryFilePath = doRemoJobs.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
+                    Path summaryFilePath = doStatechartProcessing.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
 
                     // Display.getDefault().syncExec(new Runnable() {
                     Display.getDefault().asyncExec(new Runnable() {

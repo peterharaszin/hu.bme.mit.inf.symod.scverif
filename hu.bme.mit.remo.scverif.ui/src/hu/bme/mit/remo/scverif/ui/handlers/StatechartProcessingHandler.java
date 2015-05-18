@@ -24,7 +24,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import hu.bme.mit.remo.scverif.ui.jobs.DoStatechartProcessing;
+import hu.bme.mit.remo.scverif.ui.jobs.DoStatechartVerification;
 
 /**
  * Handler for doing the tests for all the potential projects in the workspace
@@ -40,7 +40,7 @@ public class StatechartProcessingHandler extends AbstractHandler {
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
         final Shell shell = HandlerUtil.getActiveShell(event);
-        Logger logger = DoStatechartProcessing.logger;
+        Logger logger = DoStatechartVerification.logger;
         
         // https://eclipse.org/articles/Article-Concurrency/jobs-api.html
         final Job processHomeworksJob = new Job("Processing homeworks...") {
@@ -50,8 +50,8 @@ public class StatechartProcessingHandler extends AbstractHandler {
                 // SubProgressMonitor subProgressMonitor = null;
                 
                 try {
-                    DoStatechartProcessing doStatechartProcessing = new DoStatechartProcessing(shell);
-                    TreeMap<String, IProject> matchingProjectsInWorkspace = DoStatechartProcessing.getMatchingProjectsInWorkspace();
+                    DoStatechartVerification doStatechartVerification = new DoStatechartVerification(shell);
+                    TreeMap<String, IProject> matchingProjectsInWorkspace = DoStatechartVerification.getMatchingProjectsInWorkspace();
                     
                     // subProgressMonitor = new SubProgressMonitor(monitor, 1);
                     // setProperty(key, value);
@@ -60,13 +60,13 @@ public class StatechartProcessingHandler extends AbstractHandler {
                             + StatechartProcessingHandler.class.getProtectionDomain().getCodeSource().getLocation()
                             + "'.");
                     
-//                    doStatechartProcessing.cleanAndFullBuildAllProjectsInWorkspace(null);
-                    //                  doStatechartProcessing.waitForBuildWithJobChangeAdapter();
-                    // doStatechartProcessing.waitForAutoAndManualBuild();
-                    doStatechartProcessing.requestAutoBuildAndWaitForIt();
+//                    doStatechartVerification.cleanAndFullBuildAllProjectsInWorkspace(null);
+                    //                  doStatechartVerification.waitForBuildWithJobChangeAdapter();
+                    // doStatechartVerification.waitForAutoAndManualBuild();
+                    doStatechartVerification.requestAutoBuildAndWaitForIt();
 
                     logger.info("============ OK, WAITING FOR AUTOBUILD DONE ==============");
-                    Path summaryFilePath = doStatechartProcessing.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
+                    Path summaryFilePath = doStatechartVerification.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
 
                     // Display.getDefault().syncExec(new Runnable() {
                     Display.getDefault().asyncExec(new Runnable() {

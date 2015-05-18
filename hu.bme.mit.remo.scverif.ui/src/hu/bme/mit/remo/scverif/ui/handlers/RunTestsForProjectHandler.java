@@ -26,7 +26,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import hu.bme.mit.remo.scverif.ui.jobs.DoStatechartProcessing;
+import hu.bme.mit.remo.scverif.ui.jobs.DoStatechartVerification;
 
 /**
  * Handler for running the homework tests on the selected project(s)
@@ -38,7 +38,7 @@ public class RunTestsForProjectHandler extends AbstractHandler {
 
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
-        Logger logger = DoStatechartProcessing.logger;
+        Logger logger = DoStatechartVerification.logger;
 
         logger.info("RunTestsForProjectHandler::execute(), at: '"
                 + RunTestsForProjectHandler.class.getProtectionDomain().getCodeSource().getLocation() + "'.");
@@ -82,12 +82,12 @@ public class RunTestsForProjectHandler extends AbstractHandler {
                         }
                     }
 
-                    TreeMap<String, IProject> matchingProjects = DoStatechartProcessing.getMatchingProjects(iProjectsList);
+                    TreeMap<String, IProject> matchingProjects = DoStatechartVerification.getMatchingProjects(iProjectsList);
 
                     logger.info("matchingProjects.size(): " + matchingProjects.size());
 
-                    DoStatechartProcessing doStatechartProcessing = new DoStatechartProcessing(shell);
-                    Path summaryFilePath = doStatechartProcessing.runTestsOnProjects(matchingProjects);
+                    DoStatechartVerification doStatechartVerification = new DoStatechartVerification(shell);
+                    Path summaryFilePath = doStatechartVerification.runTestsOnProjects(matchingProjects);
 
 //                    Display.getDefault().asyncExec(new Runnable() {
 //                        public void run() {
@@ -149,9 +149,9 @@ public class RunTestsForProjectHandler extends AbstractHandler {
             @Override
             public void done(IJobChangeEvent event) {
                 if (event.getResult().isOK()) {
-                    DoStatechartProcessing.logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
+                    DoStatechartVerification.logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
                 } else {
-                    DoStatechartProcessing.logger.severe("Job called '" + processHomeworksJob.getName()
+                    DoStatechartVerification.logger.severe("Job called '" + processHomeworksJob.getName()
                     //                        .error("Job called '" + processHomeworksJob.getName()
                             + "' did not complete successfully");
                 }

@@ -21,7 +21,7 @@ import org.yakindu.sct.model.sgraph.Statechart;
 import org.yakindu.sct.model.stext.stext.InterfaceScope;
 
 import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
-import hu.bme.mit.remo.scverif.ui.jobs.DoStatechartProcessing;
+import hu.bme.mit.remo.scverif.ui.jobs.DoStatechartVerification;
 
 /**
  * Handler for analyzing the selected SCT file
@@ -71,7 +71,7 @@ public class SCTAnalyzeHandler extends AbstractHandler {
                 StatechartAnalyzer stateChartAnalyzer = new StatechartAnalyzer(statechart);
                 stateChartAnalyzer.processStatechart();
 
-                Logger logger = DoStatechartProcessing.logger;
+                Logger logger = DoStatechartVerification.logger;
 
                 logger.info("getting interfaces... (dirty test)");
 
@@ -132,7 +132,7 @@ public class SCTAnalyzeHandler extends AbstractHandler {
         if (firstElement != null && firstElement instanceof IFile) {
             IFile file = (IFile) firstElement;
             String fileExtension = file.getFileExtension();
-            return (DoStatechartProcessing.SCT_FILE_EXTENSION.equals(fileExtension) ? file : null);
+            return (DoStatechartVerification.SCT_FILE_EXTENSION.equals(fileExtension) ? file : null);
         } else {
             return null;
         }
@@ -150,7 +150,7 @@ public class SCTAnalyzeHandler extends AbstractHandler {
         //				&& firstElement.getClass().getTypeName() == fileTypeClass) {
         //			IFile file = (IFile) firstElement;
         //			String fileExtension = file.getFileExtension();			
-        //			return (DoStatechartProcessing.SCT_FILE_EXTENSION.equals(fileExtension) ? file
+        //			return (DoStatechartVerification.SCT_FILE_EXTENSION.equals(fileExtension) ? file
         //					: null);
         //		} else {
         //			return null;

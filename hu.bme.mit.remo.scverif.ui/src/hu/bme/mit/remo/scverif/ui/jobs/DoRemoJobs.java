@@ -17,6 +17,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -621,6 +623,8 @@ public class DoRemoJobs {
     public Path runTestsOnProjects(TreeMap<String, IProject> remoIProjects, IProgressMonitor monitor) throws Exception {
         logger.info("Executing statechart analyzation job (ReMo)...");
 
+        Instant startTimeOfProcessing = Instant.now();
+
         if (remoIProjects.isEmpty()) {
             throw new Exception(
                     "No projects could be found in the workspace at '" + workspaceRoot.getLocationURI() + "'!");
@@ -652,7 +656,13 @@ public class DoRemoJobs {
 
         int numberOfProjects = iProjectsEntrySet.size();
         int numberOfSuccessfulProjects = 0;
-        
+
+        // time measurements
+        long minTimeOfProjectProcessingWithCsvWritingInNanoseconds = Long.MAX_VALUE;
+        long maxTimeOfProjectProcessingWithCsvWritingInNanoseconds = 0;
+        long minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds = Long.MAX_VALUE;
+        long maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds = 0;
+
         try (BufferedWriter csvWriter = Files.newBufferedWriter(CSV_targetFilePath, charset)) {
             monitor.beginTask("Starting to process projects...", iProjectsEntrySet.size());
 
@@ -681,6 +691,8 @@ public class DoRemoJobs {
 
             try {
                 for (Entry<String, IProject> currentEntry : iProjectsEntrySet) {
+                    Instant startTimeOfProjectProcessingWithCsvWriting = Instant.now();
+
                     String neptunCode = currentEntry.getKey();
                     IProject currentIProject = currentEntry.getValue();
 
@@ -693,13 +705,36 @@ public class DoRemoJobs {
                     }
                     //                monitor.subTask("Clean+build...");               
 
+                    monitor.setTaskName("Processing the project called '" + currentIProject.getName() + "'...");
+
                     boolean wasSuccessful = false;
                     // the number of tests that failed during the run
                     int failureCount = 0;
                     // the number of tests run
                     int runCount = 0;
+
+                    Instant startTimeOfProjectProcessing = Instant.now();
+
                     HomeworkResult homeworkResult = runTestsOnProject(projectsRootDirectoryPath, neptunCode,
                             currentIProject, referenceModelElementsInAMap);
+
+                    Instant endTimeOfProjectProcessing = Instant.now();
+                    // Duration durationOfProjectProcessingWithoutCsvWriting = Duration.between(startTimeOfProjectProcessing, endTimeOfProjectProcessing);
+                    long durationOfProjectProcessingWithoutCsvWritingInMilliseconds = ChronoUnit.MILLIS
+                            .between(startTimeOfProjectProcessing, endTimeOfProjectProcessing);
+                    long durationOfProjectProcessingWithoutCsvWritingInNanoseconds = ChronoUnit.NANOS
+                            .between(startTimeOfProjectProcessing, endTimeOfProjectProcessing);
+
+                    if (durationOfProjectProcessingWithoutCsvWritingInNanoseconds < minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds) {
+                        minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds = durationOfProjectProcessingWithoutCsvWritingInNanoseconds;
+                    }
+                    if (durationOfProjectProcessingWithoutCsvWritingInNanoseconds > maxTimeOfProjectProcessingWithCsvWritingInNanoseconds) {
+                        maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds = durationOfProjectProcessingWithoutCsvWritingInNanoseconds;
+                    }
+
+                    System.out.println("Duration of processing the project called '" + currentIProject.getName()
+                            + " without the CSV writing process took "
+                            + durationOfProjectProcessingWithoutCsvWritingInMilliseconds + " milliseconds ("+durationOfProjectProcessingWithoutCsvWritingInNanoseconds+" nanoseconds).");
 
                     monitor.worked(1);
 
@@ -776,16 +811,16 @@ public class DoRemoJobs {
 
                     String uploadedSctFileMessage = (homeworkResult.isSctUploaded() ? "Igen" : "Nem");
                     boolean noProblemsDetectedInProject = (wasSuccessful && exceptionThrown == null);
-                    
-                    if(noProblemsDetectedInProject){
+
+                    if (noProblemsDetectedInProject) {
                         numberOfSuccessfulProjects++;
                     }
-                    
+
                     // Dátum;Neptun-kód;Összegzés (siker/hiba);Beadott;Tiltott elemek;Hiányzó elemek az interfészben;Teszthibák;Hibás tesztesetek száma;Összes teszteset száma;Exception dobódott
                     csvWriter.append(dateFormatColumn);
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(neptunCode);
-                    csvWriter.append(CSV_COMMA_DELIMITER);                    
+                    csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(noProblemsDetectedInProject ? "Siker" : "Hiba");
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(uploadedSctFileMessage);
@@ -806,6 +841,24 @@ public class DoRemoJobs {
                     // and finally, add a new line
                     csvWriter.append(NEW_LINE);
 
+                    Instant endTimeOfProjectProcessingWithCsvWriting = Instant.now();
+                    // Duration durationOfProjectProcessingWithCsvWriting = Duration.between(startTimeOfProjectProcessingWithCsvWriting, endTimeOfProjectProcessingWithCsvWriting);
+                    long durationOfProjectProcessingWithCsvWritingInMilliseconds = ChronoUnit.MILLIS.between(
+                            startTimeOfProjectProcessingWithCsvWriting, endTimeOfProjectProcessingWithCsvWriting);
+                    long durationOfProjectProcessingWithCsvWritingInNanoseconds = ChronoUnit.NANOS.between(
+                            startTimeOfProjectProcessingWithCsvWriting, endTimeOfProjectProcessingWithCsvWriting);
+
+                    if (durationOfProjectProcessingWithCsvWritingInNanoseconds < minTimeOfProjectProcessingWithCsvWritingInNanoseconds) {
+                        minTimeOfProjectProcessingWithCsvWritingInNanoseconds = durationOfProjectProcessingWithCsvWritingInNanoseconds;
+                    }
+                    if (durationOfProjectProcessingWithCsvWritingInNanoseconds > maxTimeOfProjectProcessingWithCsvWritingInNanoseconds) {
+                        maxTimeOfProjectProcessingWithCsvWritingInNanoseconds = durationOfProjectProcessingWithCsvWritingInNanoseconds;
+                    }
+
+                    logger.info("Duration of project processing with the CSV writing process took "
+                            + durationOfProjectProcessingWithCsvWritingInMilliseconds + " milliseconds ("
+                            + durationOfProjectProcessingWithCsvWritingInNanoseconds + " nanoseconds).");
+
                 }
 
             } finally {
@@ -821,7 +874,21 @@ public class DoRemoJobs {
             monitor.done();
         }
 
-        logger.info(numberOfSuccessfulProjects + " projects were successful out of "+numberOfProjects);
+        Instant endTimeOfProcessing = Instant.now();
+        // Duration durationOfProcessing = Duration.between(startTimeOfProcessing, endTimeOfProcessing);
+        long processingTimeInMilliSeconds = ChronoUnit.MILLIS.between(startTimeOfProcessing, endTimeOfProcessing);
+        long processingTimeInNanoSeconds = ChronoUnit.NANOS.between(startTimeOfProcessing, endTimeOfProcessing);
+        logger.info("Durations: maximum duration of testing a project without the CSV writing process took "
+                +maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds/1000000+" milliseconds ("+ maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds + " nanoseconds).");
+        logger.info("Durations: maximum duration of testing a project with the CSV writing process took "
+                +maxTimeOfProjectProcessingWithCsvWritingInNanoseconds/1000000 + " milliseconds ("+ maxTimeOfProjectProcessingWithCsvWritingInNanoseconds + " nanoseconds.");
+        logger.info("Durations: minimum duration of testing a project without the CSV writing process took "
+                +minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds/1000000+" milliseconds ("+ minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds + " nanoseconds).");
+        logger.info("Durations: minimum duration of testing a project with the CSV writing process took "
+                + minTimeOfProjectProcessingWithCsvWritingInNanoseconds/1000000 + " milliseconds ("+ minTimeOfProjectProcessingWithCsvWritingInNanoseconds + " nanoseconds).");
+        logger.info("Durations: duration of the whole testing process took " + processingTimeInMilliSeconds
+                + " milliseconds ("+processingTimeInNanoSeconds+" nanoseconds).");
+        logger.info("Results: " + numberOfSuccessfulProjects + " projects were successful out of " + numberOfProjects);
         logger.info("(System Modeling) End of processing.");
 
         return CSV_targetFilePath;

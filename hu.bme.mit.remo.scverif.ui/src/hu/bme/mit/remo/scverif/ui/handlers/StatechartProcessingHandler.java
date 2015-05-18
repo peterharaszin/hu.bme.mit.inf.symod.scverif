@@ -24,7 +24,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
+import hu.bme.mit.remo.scverif.ui.jobs.DoStatechartProcessing;
 
 /**
  * Handler for doing the tests for all the potential projects in the workspace
@@ -40,7 +40,7 @@ public class StatechartProcessingHandler extends AbstractHandler {
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
         final Shell shell = HandlerUtil.getActiveShell(event);
-        Logger logger = DoRemoJobs.logger;
+        Logger logger = DoStatechartProcessing.logger;
         
         // https://eclipse.org/articles/Article-Concurrency/jobs-api.html
         final Job processHomeworksJob = new Job("Processing homeworks...") {
@@ -50,8 +50,8 @@ public class StatechartProcessingHandler extends AbstractHandler {
                 // SubProgressMonitor subProgressMonitor = null;
                 
                 try {
-                    DoRemoJobs doRemoJobs = new DoRemoJobs(shell);
-                    TreeMap<String, IProject> matchingProjectsInWorkspace = DoRemoJobs.getMatchingProjectsInWorkspace();
+                    DoStatechartProcessing doRemoJobs = new DoStatechartProcessing(shell);
+                    TreeMap<String, IProject> matchingProjectsInWorkspace = DoStatechartProcessing.getMatchingProjectsInWorkspace();
                     
                     // subProgressMonitor = new SubProgressMonitor(monitor, 1);
                     // setProperty(key, value);

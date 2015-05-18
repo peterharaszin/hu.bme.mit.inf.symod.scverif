@@ -94,7 +94,7 @@ import hu.bme.mit.remo.scverif.ui.YakinduSGenFileNotFoundException;
  * 
  * @author Peter Haraszin
  */
-public class DoRemoJobs {
+public class DoStatechartProcessing {
     public static final String SCT_FILE_EXTENSION = "sct";
     public static final String SGEN_FILE_EXTENSION = "sgen";
     public static final String yakindu_BUILDER_ID = "org.yakindu.sct.builder.SCTBuilder";
@@ -129,8 +129,8 @@ public class DoRemoJobs {
             dateFormatPattern.replace(' ', '_'));
 
     public static final Logger logger = Logger.getLogger("System Modeling Log");
-    //    public static final Logger logger = LoggerFactory.getLogger(DoRemoJobs.class);
-    private static DoRemoJobs.MyConsoleHandler myConsoleHandler = new MyConsoleHandler();
+    //    public static final Logger logger = LoggerFactory.getLogger(DoStatechartProcessing.class);
+    private static DoStatechartProcessing.MyConsoleHandler myConsoleHandler = new MyConsoleHandler();
     private static final String projectRegex = "hu\\.bme\\.mit\\.inf\\.symod\\.(\\w{6})\\.homework";;
     private static final Pattern patternCompiled = Pattern.compile(projectRegex, Pattern.CASE_INSENSITIVE);
 
@@ -175,7 +175,7 @@ public class DoRemoJobs {
      * @param shell
      * @throws Exception
      */
-    public DoRemoJobs(Shell shell) throws Exception {
+    public DoStatechartProcessing(Shell shell) throws Exception {
         this.parentActiveShell = shell;
         // setLogger();
 

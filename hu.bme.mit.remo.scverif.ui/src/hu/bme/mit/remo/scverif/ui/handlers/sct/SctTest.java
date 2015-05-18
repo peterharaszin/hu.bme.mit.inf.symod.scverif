@@ -2,7 +2,7 @@ package hu.bme.mit.remo.scverif.ui.handlers.sct;
 
 import static org.junit.Assert.*;
 import hu.bme.mit.remo.scverif.processing.sct.StatechartAnalyzer;
-//import hu.bme.mit.remo.scverif.ui.jobs.DoRemoJobs;
+//import hu.bme.mit.remo.scverif.ui.jobs.DoStatechartProcessing;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -26,7 +26,7 @@ public class SctTest {
 
 	@Before
 	public void setUp() throws Exception {
-//		DoRemoJobs doRemoJobs = new DoRemoJobs(null);
+//		DoStatechartProcessing doRemoJobs = new DoStatechartProcessing(null);
 //		statechartFromBundle = doRemoJobs.getStatechartFromBundle();
 //		stateChartAnalyzer.setStatechart(statechartFromBundle);
 	}

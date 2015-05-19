@@ -1,0 +1,14 @@
+GeneratorModel for yakindu::java {
+
+	statechart CallHandling {
+
+		feature Outlet {
+			targetProject = "hu.bme.mit.inf.symod.scverif.test.callhandling"
+			targetFolder = "yakindu"
+		}
+		
+		feature GeneralFeatures {
+        	TimerService = true
+		}
+	}
+}

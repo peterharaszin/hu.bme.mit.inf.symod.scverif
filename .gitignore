@@ -20,4 +20,4 @@ src-gen/
 # ignore bin directories
 bin/
 # ignore the sctcopy project directories
-hu.bme.mit.scverif.sctcopy/
+hu.bme.mit.inf.symod.scverif.sctcopy/

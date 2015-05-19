@@ -1,0 +1,415 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.jdt.ui.PackageExplorer">
+         <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Run tests for the project(s) selected"
+               style="push"
+               tooltip="ReMo - Run tests for the project(s) selected">
+            <visibleWhen
+                  checkEnabled="false">
+               <and>
+                  <with
+                        variable="activeMenuSelection">
+                     <iterate
+                           ifEmpty="false">
+                        <and>
+                        	<adapt type="org.eclipse.jdt.core.IJavaProject"></adapt>
+                        	<!--
+                           <test
+                                 property="org.eclipse.core.resources.projectNature"
+                                 value="org.eclipse.jdt.core.javanature">
+                           </test>
+                           <adapt
+                                 type="org.eclipse.core.resources.IProject">
+                           </adapt>
+                           <test
+                                 property="org.eclipse.core.resources.projectNature"
+                                 value="org.yakindu.sct.builder.SCTNature">
+                           </test>
+                           -->
+                        </and>
+                     </iterate>
+                  </with>
+               </and>
+            </visibleWhen>
+         </command>
+         
+         <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.sct.copytoprojects"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Copy the SCT file(s) to the appropriate project(s)"
+               style="push"
+               tooltip="ReMo - Copy the SCT file(s) to the appropriate project(s)">
+            <visibleWhen
+                  checkEnabled="false">
+               <and>
+                  <with
+                        variable="activeMenuSelection">
+                     <iterate
+                           ifEmpty="false">
+                        <and>
+                           <adapt
+                                 type="org.eclipse.core.resources.IFile">
+		                        <test
+		                              property="org.eclipse.core.resources.name"
+		                              value="*.sct">
+		                        </test>                                 
+                           </adapt>
+                        </and>
+                     </iterate>
+                  </with>
+               </and>
+            </visibleWhen>
+         </command>       
+         
+        <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Analyze SCT model"
+               style="push"
+               tooltip="ReMo - Analyze SCT model">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeMenuSelection">
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IFile">
+                        <test
+                              property="org.eclipse.core.resources.name"
+                              value="*.sct">
+                        </test>
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>
+         
+      </menuContribution>      
+            
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.ui.views.ResourceNavigator">
+         <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Run tests for the project(s) selected"
+               style="push"
+               tooltip="ReMo - Run tests for the project(s) selected">
+            <visibleWhen
+                  checkEnabled="false">
+               <and>
+                  <with
+                        variable="activeMenuSelection">
+                     <iterate
+                           ifEmpty="false">
+                        <and>
+                           <test
+                                 property="org.eclipse.core.resources.projectNature"
+                                 value="org.eclipse.jdt.core.javanature">
+                           </test>
+                           <adapt
+                                 type="org.eclipse.core.resources.IProject">
+                           </adapt>
+                           <test
+                                 property="org.eclipse.core.resources.projectNature"
+                                 value="org.yakindu.sct.builder.SCTNature">
+                           </test>
+                        </and>
+                     </iterate>
+                  </with>
+               </and>
+            </visibleWhen>
+         </command>
+         
+         <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.sct.copytoprojects"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Copy the SCT file(s) to the appropriate project(s)"
+               style="push"
+               tooltip="ReMo - Copy the SCT file(s) to the appropriate project(s)">
+            <visibleWhen
+                  checkEnabled="false">
+               <and>
+                  <with
+                        variable="activeMenuSelection">
+                     <iterate
+                           ifEmpty="false">
+                        <and>
+                           <adapt
+                                 type="org.eclipse.core.resources.IFile">
+		                        <test
+		                              property="org.eclipse.core.resources.name"
+		                              value="*.sct">
+		                        </test>                                 
+                           </adapt>
+                        </and>
+                     </iterate>
+                  </with>
+               </and>
+            </visibleWhen>
+         </command>
+
+         <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Analyze SCT model"
+               style="push"
+               tooltip="ReMo - Analyze SCT model">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeMenuSelection">
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IFile">
+                        <test
+                              property="org.eclipse.core.resources.name"
+                              value="*.sct">
+                        </test>
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>
+
+      </menuContribution>      
+      
+      
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu?after=additions">
+         <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Run tests for the project(s) selected"
+               style="push"
+               tooltip="ReMo - Run tests for the project(s) selected">
+            <visibleWhen
+                  checkEnabled="false">
+               <and>
+                  <with
+                        variable="activeMenuSelection">
+                     <iterate
+                           ifEmpty="false">
+                        <and>
+                           <test
+                                 property="org.eclipse.core.resources.projectNature"
+                                 value="org.eclipse.jdt.core.javanature">
+                           </test>
+                           <adapt
+                                 type="org.eclipse.core.resources.IProject">
+                           </adapt>
+                           <test
+                                 property="org.eclipse.core.resources.projectNature"
+                                 value="org.yakindu.sct.builder.SCTNature">
+                           </test>
+                        </and>
+                     </iterate>
+                  </with>
+               </and>
+            </visibleWhen>
+         </command>
+         
+         <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.sct.copytoprojects"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Copy the SCT file(s) to the appropriate project(s)"
+               style="push"
+               tooltip="ReMo - Copy the SCT file(s) to the appropriate project(s)">
+            <visibleWhen
+                  checkEnabled="false">
+               <and>
+                  <with
+                        variable="activeMenuSelection">
+                     <iterate
+                           ifEmpty="false">
+                        <and>
+                           <adapt
+                                 type="org.eclipse.core.resources.IFile">
+		                        <test
+		                              property="org.eclipse.core.resources.name"
+		                              value="*.sct">
+		                        </test>                                 
+                           </adapt>
+                        </and>
+                     </iterate>
+                  </with>
+               </and>
+            </visibleWhen>
+         </command>          
+         
+         <command
+               commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
+               disabledIcon="icons/Model_inactive_16x16.png"
+               icon="icons/3D_objects_16x16_active.png"
+               label="ReMo - Analyze SCT model"
+               style="push"
+               tooltip="ReMo - Analyze SCT model">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeMenuSelection">
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IFile">
+                        <test
+                              property="org.eclipse.core.resources.name"
+                              value="*.sct">
+                        </test>
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+         </command>         
+         
+      </menuContribution>
+      
+      <menuContribution
+            allPopups="false"
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
+      
+      <!--      
+         <toolbar
+               id="hu.bme.mit.inf.symod.scverif.toolbars.sct.analyze"
+               label="Analyze SCT file (ReMo)">
+            <command
+                  commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
+                  disabledIcon="icons/Model_inactive_16x16.png"
+                  icon="icons/Model_active_16x16.png"
+                  label="Analyze command"
+                  mnemonic="M"
+                  style="push"
+                  tooltip="Analyze SCT file (ReMo)">
+            </command>
+         </toolbar>
+         
+         <toolbar
+               id="hu.bme.mit.inf.symod.scverif.toolbars.sgen.generate"
+               label="Generate code (ReMo)">
+            <command
+                  commandId="hu.bme.mit.inf.symod.scverif.commands.sgen.generate"
+                  disabledIcon="icons/Gear_16x16.png"
+                  icon="icons/Gear_16x16.png"
+                  label="Generate command (ReMo)"
+                  mnemonic="G"
+                  style="push"
+                  tooltip="Generate code (ReMo)">
+            </command>
+         </toolbar>
+         -->
+         
+         <toolbar
+               id="hu.bme.mit.inf.symod.scverif.startprocess"
+               label="Start processing ReMo homeworks">
+            <command
+                  commandId="hu.bme.mit.inf.symod.scverif.commands.startprocessing"
+                  disabledIcon="icons/Model_inactive_16x16.png"
+                  icon="icons/3D_objects_16x16_active.png"
+                  label="Start processing ReMo homeworks command"
+                  mnemonic="R"
+                  style="push"
+                  tooltip="Start processing (ReMo)">
+            </command>
+         </toolbar>         
+      </menuContribution>
+      <menuContribution
+            allPopups="false"
+            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+         <menu
+               icon="icons/3D_objects_16x16_active.png"
+               id="hu.bme.mit.inf.symod.scverif.ui.menu"
+               label="System Modeling "
+               mnemonic="D"
+               tooltip="Rendszermodellezés menü">
+            <command
+                  commandId="hu.bme.mit.inf.symod.scverif.commands.startprocessing"
+                  disabledIcon="icons/Model_inactive_16x16.png"
+                  icon="icons/Gear_16x16.png"
+                  label="Start processing..."
+                  style="push"
+                  tooltip="Start processing">
+            </command>
+         </menu>
+      </menuContribution>
+      
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            description="Iterate through SCT model and analyze it"
+            id="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
+            name="Analyze SCT file">
+      </command>
+      <command
+            description="(ReMo) Generate code from sgen file"
+            id="hu.bme.mit.inf.symod.scverif.commands.sgen.generate"
+            name="Generate code based on sgen file">
+      </command>
+      <command
+            description="Start processing ReMo homeworks..."
+            id="hu.bme.mit.inf.symod.scverif.commands.startprocessing"
+            name="Start processing ReMo homeworks!">
+      </command>
+      <command
+            id="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject"
+            name="Run homework tests for the current project (System Modeling)">
+      </command>
+      <command
+            description="Copy SCT files to the appropriate IProjects (based on the filename)"
+            id="hu.bme.mit.inf.symod.scverif.commands.sct.copytoprojects"
+            name="Copy SCT files to IProjects">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="hu.bme.mit.inf.symod.scverif.ui.handlers.sct.SCTAnalyzeHandler"
+            commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze">
+      </handler>
+      <handler
+            class="hu.bme.mit.inf.symod.scverif.ui.handlers.sgen.SGenAnalyzerHandler"
+            commandId="hu.bme.mit.inf.symod.scverif.commands.sgen.generate">
+      </handler>
+      <handler
+            class="hu.bme.mit.inf.symod.scverif.ui.handlers.StatechartProcessingHandler"
+            commandId="hu.bme.mit.inf.symod.scverif.commands.startprocessing">
+      </handler>
+      <handler
+            class="hu.bme.mit.inf.symod.scverif.ui.handlers.RunTestsForProjectHandler"
+            commandId="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject">
+      </handler>
+      <handler
+            class="hu.bme.mit.inf.symod.scverif.ui.handlers.sct.SctCopyToIProjects"
+            commandId="hu.bme.mit.inf.symod.scverif.commands.sct.copytoprojects">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="hu.bme.mit.inf.symod.scverif.commands.startprocessing"
+            contextId="org.eclipse.ui.contexts.window"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+M2+L">
+      </key>
+   </extension>
+
+</plugin>

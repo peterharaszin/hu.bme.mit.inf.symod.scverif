@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Yakindu Statechart Analyzer - Processing Part
+Bundle-SymbolicName: hu.bme.mit.inf.symod.scverif.processing
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Require-Bundle: org.yakindu.sct.generator.core;bundle-version="2.3.1",
+ org.yakindu.sct.model.sgen;bundle-version="2.3.1",
+ org.yakindu.sct.generator.genmodel;bundle-version="2.3.1",
+ org.yakindu.sct.model.stext,
+ org.yakindu.sct.model.sgraph,
+ org.yakindu.base.expressions,
+ org.eclipse.emf.ecore,
+ org.yakindu.base.types
+Export-Package: hu.bme.mit.inf.symod.scverif.processing.sct;uses:="org.yakindu.sct.model.sgraph",
+ hu.bme.mit.inf.symod.scverif.processing.sgen;uses:="org.yakindu.sct.generator.core,org.eclipse.core.resources"
+Bundle-Vendor: BME-MIT

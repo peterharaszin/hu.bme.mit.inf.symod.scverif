@@ -12,8 +12,10 @@ Require-Bundle: org.yakindu.sct.generator.core;bundle-version="2.3.1",
  org.yakindu.base.expressions,
  org.eclipse.emf.ecore,
  org.yakindu.base.types,
- org.junit;bundle-version="4.12.0"
+ org.junit;bundle-version="4.12.0",
+ org.eclipse.jdt.core;bundle-version="3.11.0"
 Export-Package: hu.bme.mit.inf.symod.scverif.processing,
+ hu.bme.mit.inf.symod.scverif.processing.jobs,
  hu.bme.mit.inf.symod.scverif.processing.sct;uses:="org.yakindu.sct.model.sgraph",
  hu.bme.mit.inf.symod.scverif.processing.sgen;uses:="org.yakindu.sct.generator.core,org.eclipse.core.resources"
 Bundle-Vendor: BME-MIT

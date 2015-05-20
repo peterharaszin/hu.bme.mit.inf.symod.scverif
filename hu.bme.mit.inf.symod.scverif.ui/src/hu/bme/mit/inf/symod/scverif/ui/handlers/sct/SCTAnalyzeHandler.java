@@ -20,8 +20,8 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import org.yakindu.sct.model.sgraph.Statechart;
 import org.yakindu.sct.model.stext.stext.InterfaceScope;
 
+import hu.bme.mit.inf.symod.scverif.processing.jobs.DoStatechartVerification;
 import hu.bme.mit.inf.symod.scverif.processing.sct.StatechartAnalyzer;
-import hu.bme.mit.inf.symod.scverif.ui.jobs.DoStatechartVerification;
 
 /**
  * Handler for analyzing the selected SCT file

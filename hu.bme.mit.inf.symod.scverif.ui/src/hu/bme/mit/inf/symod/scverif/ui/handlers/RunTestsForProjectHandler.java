@@ -28,7 +28,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import hu.bme.mit.inf.symod.scverif.ui.jobs.DoStatechartVerification;
+import hu.bme.mit.inf.symod.scverif.processing.jobs.DoStatechartVerification;
 
 /**
  * Handler for running the homework tests on the selected project(s)
@@ -104,7 +104,8 @@ public class RunTestsForProjectHandler extends AbstractHandler {
 
                     logger.info("matchingProjects.size(): " + matchingProjects.size());
 
-                    DoStatechartVerification doStatechartVerification = new DoStatechartVerification(shell);
+                    DoStatechartVerification doStatechartVerification = new DoStatechartVerification();
+                    // doStatechartVerification.requestAutoBuildAndWaitForIt();                    
                     Path summaryFilePath = doStatechartVerification.runTestsOnProjects(matchingProjects);
 
 //                    Display.getDefault().asyncExec(new Runnable() {

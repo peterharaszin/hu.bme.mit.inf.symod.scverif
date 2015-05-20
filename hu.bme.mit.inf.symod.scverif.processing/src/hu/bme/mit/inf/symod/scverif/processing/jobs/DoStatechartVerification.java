@@ -1,10 +1,10 @@
-package hu.bme.mit.inf.symod.scverif.ui.jobs;
+package hu.bme.mit.inf.symod.scverif.processing.jobs;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
+//import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -59,14 +59,11 @@ import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.operation.IRunnableWithProgress;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.progress.IProgressConstants;
-import org.eclipse.ui.progress.IProgressService;
+//import org.eclipse.jface.operation.IRunnableWithProgress;
+//import org.eclipse.ui.IWorkbench;
+//import org.eclipse.ui.PlatformUI;
+//import org.eclipse.ui.progress.IProgressConstants;
+//import org.eclipse.ui.progress.IProgressService;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
@@ -113,7 +110,7 @@ public class DoStatechartVerification {
     private static final String testCompiledClassFileFullPathInIProject = testCompiledClassFolderPathInIProject
             + testClassName + ".class";
 
-    private Shell parentActiveShell;
+//    private Shell parentActiveShell;
     private IWorkspaceRoot workspaceRoot;
     private IWorkspace workspace;
 
@@ -175,8 +172,7 @@ public class DoStatechartVerification {
      * @param shell
      * @throws Exception
      */
-    public DoStatechartVerification(Shell shell) throws Exception {
-        this.parentActiveShell = shell;
+    public DoStatechartVerification() throws Exception {
         // setLogger();
 
         workspace = ResourcesPlugin.getWorkspace();
@@ -1029,24 +1025,26 @@ public class DoStatechartVerification {
                     
                     logger.info(resultMessage);
 
-                    if (parentActiveShell != null) {
-                        Display.getDefault().syncExec(new Runnable() {
-                            public void run() {
-                                MessageDialog.openInformation(parentActiveShell, "Job done",
-                                        resultMessage);
-                            }
-                        });
-                    }
+//                    if (parentActiveShell != null) {
+//                        Display.getDefault().syncExec(new Runnable() {
+//                            public void run() {
+//                                MessageDialog.openInformation(parentActiveShell, "Job done",
+//                                        resultMessage);
+//                            }
+//                        });
+//                    }
                 } catch (final Exception e) {
+                    String resultMessage = e.getMessage();
+                    
                     e.printStackTrace();
-                    if (parentActiveShell != null) {
-                        Display.getDefault().syncExec(new Runnable() {
-                            @Override
-                            public void run() {
-                                MessageDialog.openError(parentActiveShell, "Job finished with errors", e.getMessage());
-                            }
-                        });
-                    }
+//                    if (parentActiveShell != null) {
+//                        Display.getDefault().syncExec(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                MessageDialog.openError(parentActiveShell, "Job finished with errors", resultMessage);
+//                            }
+//                        });
+//                    }
                 } finally {
                     monitor.done();
                     logger.info("End of statechart analyzation.");
@@ -1081,20 +1079,6 @@ public class DoStatechartVerification {
         });
         remoJob.schedule();
 
-    }
-
-    /**
-     * "The user may decide to wait while the reservation is being made or decide to run it in the background. When the job completes the reservation, it checks to see what the user chose to do. [... ] This method checks the IProgressConstants.PROPERTY_IN_DIALOG to see if the job is being run in a dialog. Basically, if the property exists and is the Boolean value true, then the user decided to wait for the results. The results can be shown immediately to the user (by invoking showResults)."
-     * 
-     * @see https://eclipse.org/articles/Article-Concurrency/jobs-api.html
-     * @param job
-     * @return
-     */
-    public boolean isModal(Job job) {
-        Boolean isModal = (Boolean) job.getProperty(IProgressConstants.PROPERTY_IN_DIALOG);
-        if (isModal == null)
-            return false;
-        return isModal.booleanValue();
     }
 
     /**
@@ -1511,11 +1495,22 @@ public class DoStatechartVerification {
 
     /**
      * Request an automatic build and wait for its completion
+     * 
      * @throws CoreException
      */
-    public void requestAutoBuildAndWaitForIt() throws CoreException {
+    public void requestAutoBuildAndWaitForIt() throws CoreException {        
+        NullProgressMonitor progressMonitor = new NullProgressMonitor();
+        requestAutoBuildAndWaitForIt(progressMonitor);
+    }
+    
+    /**
+     * Request an automatic build and wait for its completion
+     * 
+     * @throws CoreException
+     */
+    public void requestAutoBuildAndWaitForIt(IProgressMonitor progressMonitor) throws CoreException {
         logger.info("Indicating an automatic build request");
-        ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.AUTO_BUILD, new NullProgressMonitor());
+        ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.AUTO_BUILD, progressMonitor);
         waitForAutoAndManualBuild();
     }
 
@@ -1525,13 +1520,24 @@ public class DoStatechartVerification {
      * @see https://github.com/ckulla/org.junit.contrib.eclipse/blob/master/ui/src/org/junit/contrib/eclipse/ui/WorkspaceUtil.java
      */
     public void waitForAutoAndManualBuild() {
+        NullProgressMonitor nullProgressMonitor = new NullProgressMonitor();
+        waitForAutoAndManualBuild(nullProgressMonitor, nullProgressMonitor);        
+    }
+    
+    /**
+     * Wait synchronously for automatic and manual build requests 
+     * 
+     * @see https://github.com/ckulla/org.junit.contrib.eclipse/blob/master/ui/src/org/junit/contrib/eclipse/ui/WorkspaceUtil.java
+     */
+    public void waitForAutoAndManualBuild(IProgressMonitor autoBuildMonitor, IProgressMonitor manualBuildMonitor) {
         logger.info("Waiting for autobuild (waitForAutoBuild())...");
 
         boolean wasInterrupted = false;
         do {
             try {
-                Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
-                Job.getJobManager().join(ResourcesPlugin.FAMILY_MANUAL_BUILD, null);
+                IJobManager jobManager = Job.getJobManager();
+                jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, autoBuildMonitor);
+                jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, manualBuildMonitor);
                 wasInterrupted = false;
             } catch (OperationCanceledException e) {
                 logger.info("waitForAutoBuild() -- OperationCanceledException: " + e.toString());
@@ -1546,56 +1552,71 @@ public class DoStatechartVerification {
 
         logger.info("Waiting for autobuild (waitForAutoBuild()) DONE...");
     }
+    
+    /**
+     * "The user may decide to wait while the reservation is being made or decide to run it in the background. When the job completes the reservation, it checks to see what the user chose to do. [... ] This method checks the IProgressConstants.PROPERTY_IN_DIALOG to see if the job is being run in a dialog. Basically, if the property exists and is the Boolean value true, then the user decided to wait for the results. The results can be shown immediately to the user (by invoking showResults)."
+     * 
+     * @see https://eclipse.org/articles/Article-Concurrency/jobs-api.html
+     * @param job
+     * @return
+     */
+//    public boolean isModal(Job job) {
+//        Boolean isModal = (Boolean) job.getProperty(IProgressConstants.PROPERTY_IN_DIALOG);
+//        if (isModal == null)
+//            return false;
+//        return isModal.booleanValue();
+//    }
+       
 
     /**
      * http://eclipse.1072660.n5.nabble.com/Wait-for-build-to-complete-and-check-if-errors-td57716.html#a57717
      * 
      * @return
      */
-    public static boolean buildAndWaitForEnd() {
-        boolean temp = true;
-
-        IWorkbench workbench = PlatformUI.getWorkbench();
-        IProgressService progressService = workbench.getProgressService();
-        final IRunnableWithProgress runnable = new IRunnableWithProgress() {
-            public void run(IProgressMonitor monitor) throws InvocationTargetException {
-                logger.info("===== Starting build process and waiting for the end =====");
-
-                IJobManager jobManager = Job.getJobManager();
-                // IWorkbench workbench = PlatformUI.getWorkbench();
-                try {
-                    ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD, monitor);
-                } catch (CoreException e) {
-                    throw new InvocationTargetException(e);
-                }
-                if (!monitor.isCanceled()) {
-                    try {
-
-                        jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
-
-                        jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
-                    } catch (InterruptedException e) {
-                        // continue
-
-                        if (temp)
-                            logger.info("BUILD PROCESS - InterruptedException: " + e.toString());
-                    }
-                }
-            }
-        };
-
-        try {
-            progressService.busyCursorWhile(runnable);
-            return true;
-        } catch (InvocationTargetException | InterruptedException e) {
-            e.printStackTrace();
-
-            if (temp)
-                logger.info("BUILD PROCESS - InterruptedException (progressService.busyCursorWhile): " + e.toString());
-        }
-
-        return false;
-    }
+//    public static boolean buildAndWaitForEnd() {
+//        boolean temp = true;
+//
+//        IWorkbench workbench = PlatformUI.getWorkbench();
+//        IProgressService progressService = workbench.getProgressService();
+//        final IRunnableWithProgress runnable = new IRunnableWithProgress() {
+//            public void run(IProgressMonitor monitor) throws InvocationTargetException {
+//                logger.info("===== Starting build process and waiting for the end =====");
+//
+//                IJobManager jobManager = Job.getJobManager();
+//                // IWorkbench workbench = PlatformUI.getWorkbench();
+//                try {
+//                    ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD, monitor);
+//                } catch (CoreException e) {
+//                    throw new InvocationTargetException(e);
+//                }
+//                if (!monitor.isCanceled()) {
+//                    try {
+//
+//                        jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
+//
+//                        jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
+//                    } catch (InterruptedException e) {
+//                        // continue
+//
+//                        if (temp)
+//                            logger.info("BUILD PROCESS - InterruptedException: " + e.toString());
+//                    }
+//                }
+//            }
+//        };
+//
+//        try {
+//            progressService.busyCursorWhile(runnable);
+//            return true;
+//        } catch (InvocationTargetException | InterruptedException e) {
+//            e.printStackTrace();
+//
+//            if (temp)
+//                logger.info("BUILD PROCESS - InterruptedException (progressService.busyCursorWhile): " + e.toString());
+//        }
+//
+//        return false;
+//    }
 
     /**
      * Generate statechart implementation code from an *.sgen file (code

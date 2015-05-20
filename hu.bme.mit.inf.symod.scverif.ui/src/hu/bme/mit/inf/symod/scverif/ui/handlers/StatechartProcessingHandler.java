@@ -24,7 +24,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import hu.bme.mit.inf.symod.scverif.ui.jobs.DoStatechartVerification;
+import hu.bme.mit.inf.symod.scverif.processing.jobs.DoStatechartVerification;
 
 /**
  * Handler for doing the tests for all the potential projects in the workspace
@@ -50,7 +50,7 @@ public class StatechartProcessingHandler extends AbstractHandler {
                 // SubProgressMonitor subProgressMonitor = null;
                 
                 try {
-                    DoStatechartVerification doStatechartVerification = new DoStatechartVerification(shell);
+                    DoStatechartVerification doStatechartVerification = new DoStatechartVerification();
                     TreeMap<String, IProject> matchingProjectsInWorkspace = DoStatechartVerification.getMatchingProjectsInWorkspace();
                     
                     // subProgressMonitor = new SubProgressMonitor(monitor, 1);

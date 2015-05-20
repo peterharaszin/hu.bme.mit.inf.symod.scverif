@@ -34,5 +34,4 @@ Import-Package: org.eclipse.debug.core,
  org.eclipse.emf.ecore.resource,
  org.eclipse.emf.ecore.resource.impl,
  org.eclipse.jdt.launching
-Export-Package: hu.bme.mit.inf.symod.scverif.ui,
- hu.bme.mit.inf.symod.scverif.ui.jobs
+Export-Package: hu.bme.mit.inf.symod.scverif.ui

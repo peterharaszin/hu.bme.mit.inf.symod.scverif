@@ -14,7 +14,7 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import hu.bme.mit.inf.symod.scverif.ui.jobs.DoStatechartVerification;
+import hu.bme.mit.inf.symod.scverif.processing.jobs.DoStatechartVerification;
 
 /**
  * Handler for copying the SCT file to the appropriate project (if any) in the workspace

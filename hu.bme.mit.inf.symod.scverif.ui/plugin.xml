@@ -10,9 +10,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Run tests for the project(s) selected"
+               label="System Modeling - Run tests for the selected project(s)"
                style="push"
-               tooltip="ReMo - Run tests for the project(s) selected">
+               tooltip="System Modeling - Run tests for the selected project(s)">
             <visibleWhen
                   checkEnabled="false">
                <and>
@@ -46,9 +46,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.sct.copytoprojects"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Copy the SCT file(s) to the appropriate project(s)"
+               label="System Modeling - Copy the SCT file(s) to the appropriate project(s)"
                style="push"
-               tooltip="ReMo - Copy the SCT file(s) to the appropriate project(s)">
+               tooltip="System Modeling - Copy the SCT file(s) to the appropriate project(s)">
             <visibleWhen
                   checkEnabled="false">
                <and>
@@ -75,9 +75,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Analyze SCT model"
+               label="System Modeling - Analyze SCT model"
                style="push"
-               tooltip="ReMo - Analyze SCT model">
+               tooltip="System Modeling - Analyze SCT model">
             <visibleWhen
                   checkEnabled="false">
                <with
@@ -105,9 +105,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Run tests for the project(s) selected"
+               label="System Modeling - Run tests for the selected project(s)"
                style="push"
-               tooltip="ReMo - Run tests for the project(s) selected">
+               tooltip="System Modeling - Run tests for the selected project(s)">
             <visibleWhen
                   checkEnabled="false">
                <and>
@@ -138,9 +138,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.sct.copytoprojects"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Copy the SCT file(s) to the appropriate project(s)"
+               label="System Modeling - Copy the SCT file(s) to the appropriate project(s)"
                style="push"
-               tooltip="ReMo - Copy the SCT file(s) to the appropriate project(s)">
+               tooltip="System Modeling - Copy the SCT file(s) to the appropriate project(s)">
             <visibleWhen
                   checkEnabled="false">
                <and>
@@ -167,9 +167,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Analyze SCT model"
+               label="System Modeling - Analyze SCT model"
                style="push"
-               tooltip="ReMo - Analyze SCT model">
+               tooltip="System Modeling - Analyze SCT model">
             <visibleWhen
                   checkEnabled="false">
                <with
@@ -198,9 +198,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Run tests for the project(s) selected"
+               label="System Modeling - Run tests for the selected project(s)"
                style="push"
-               tooltip="ReMo - Run tests for the project(s) selected">
+               tooltip="System Modeling - Run tests for the selected project(s)">
             <visibleWhen
                   checkEnabled="false">
                <and>
@@ -231,9 +231,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.sct.copytoprojects"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Copy the SCT file(s) to the appropriate project(s)"
+               label="System Modeling - Copy the SCT file(s) to the appropriate project(s)"
                style="push"
-               tooltip="ReMo - Copy the SCT file(s) to the appropriate project(s)">
+               tooltip="System Modeling - Copy the SCT file(s) to the appropriate project(s)">
             <visibleWhen
                   checkEnabled="false">
                <and>
@@ -260,9 +260,9 @@
                commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
                disabledIcon="icons/Model_inactive_16x16.png"
                icon="icons/3D_objects_16x16_active.png"
-               label="ReMo - Analyze SCT model"
+               label="System Modeling - Analyze SCT model"
                style="push"
-               tooltip="ReMo - Analyze SCT model">
+               tooltip="System Modeling - Analyze SCT model">
             <visibleWhen
                   checkEnabled="false">
                <with
@@ -290,7 +290,7 @@
       <!--      
          <toolbar
                id="hu.bme.mit.inf.symod.scverif.toolbars.sct.analyze"
-               label="Analyze SCT file (ReMo)">
+               label="Analyze SCT file (System Modeling)">
             <command
                   commandId="hu.bme.mit.inf.symod.scverif.commands.sct.analyze"
                   disabledIcon="icons/Model_inactive_16x16.png"
@@ -298,36 +298,36 @@
                   label="Analyze command"
                   mnemonic="M"
                   style="push"
-                  tooltip="Analyze SCT file (ReMo)">
+                  tooltip="Analyze SCT file (System Modeling)">
             </command>
          </toolbar>
          
          <toolbar
                id="hu.bme.mit.inf.symod.scverif.toolbars.sgen.generate"
-               label="Generate code (ReMo)">
+               label="Generate code (System Modeling)">
             <command
                   commandId="hu.bme.mit.inf.symod.scverif.commands.sgen.generate"
                   disabledIcon="icons/Gear_16x16.png"
                   icon="icons/Gear_16x16.png"
-                  label="Generate command (ReMo)"
+                  label="Generate code (System Modeling)"
                   mnemonic="G"
                   style="push"
-                  tooltip="Generate code (ReMo)">
+                  tooltip="Generate code (System Modeling)">
             </command>
          </toolbar>
          -->
          
          <toolbar
                id="hu.bme.mit.inf.symod.scverif.startprocess"
-               label="Start processing ReMo homeworks">
+               label="Start processing System Modeling homeworks">
             <command
                   commandId="hu.bme.mit.inf.symod.scverif.commands.startprocessing"
                   disabledIcon="icons/Model_inactive_16x16.png"
                   icon="icons/3D_objects_16x16_active.png"
-                  label="Start processing ReMo homeworks command"
+                  label="Start processing System Modeling homeworks command"
                   mnemonic="R"
                   style="push"
-                  tooltip="Start processing (ReMo)">
+                  tooltip="Start processing System Modeling homeworks">
             </command>
          </toolbar>         
       </menuContribution>
@@ -344,9 +344,9 @@
                   commandId="hu.bme.mit.inf.symod.scverif.commands.startprocessing"
                   disabledIcon="icons/Model_inactive_16x16.png"
                   icon="icons/Gear_16x16.png"
-                  label="Start processing..."
+                  label="Start processing homeworks..."
                   style="push"
-                  tooltip="Start processing">
+                  tooltip="Start processing System Modeling homeworks">
             </command>
          </menu>
       </menuContribution>
@@ -360,18 +360,18 @@
             name="Analyze SCT file">
       </command>
       <command
-            description="(ReMo) Generate code from sgen file"
+            description="(System Modeling) Generate code from sgen file"
             id="hu.bme.mit.inf.symod.scverif.commands.sgen.generate"
-            name="Generate code based on sgen file">
+            name="Generate code based on sgen file (System Modeling)">
       </command>
       <command
-            description="Start processing ReMo homeworks..."
+            description="Start processing System Modeling homeworks..."
             id="hu.bme.mit.inf.symod.scverif.commands.startprocessing"
-            name="Start processing ReMo homeworks!">
+            name="Start processing System Modeling homeworks">
       </command>
       <command
             id="hu.bme.mit.inf.symod.scverif.commands.runtestsforproject"
-            name="Run homework tests for the current project (System Modeling)">
+            name="Run tests for the current homework project (System Modeling)">
       </command>
       <command
             description="Copy SCT files to the appropriate IProjects (based on the filename)"

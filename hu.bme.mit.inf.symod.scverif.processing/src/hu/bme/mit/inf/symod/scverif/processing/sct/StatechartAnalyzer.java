@@ -44,6 +44,8 @@ import org.yakindu.sct.model.stext.stext.SimpleScope;
 import org.yakindu.sct.model.stext.stext.TimeEventSpec;
 import org.yakindu.sct.model.stext.stext.VariableDefinition;
 
+import hu.bme.mit.inf.symod.scverif.processing.jobs.DoStatechartVerification;
+
 /**
  * Class for the statecharts' static checkings
  * 
@@ -51,7 +53,7 @@ import org.yakindu.sct.model.stext.stext.VariableDefinition;
  *
  */
 public class StatechartAnalyzer {
-    public static final Logger logger = Logger.getLogger("System Modeling Log");
+    public static final Logger logger = DoStatechartVerification.logger;
 
     private Statechart statechart;
     private HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap;

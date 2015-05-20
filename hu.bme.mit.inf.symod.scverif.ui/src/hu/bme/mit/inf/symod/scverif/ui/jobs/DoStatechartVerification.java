@@ -74,14 +74,14 @@ import org.yakindu.sct.model.sgen.GeneratorEntry;
 import org.yakindu.sct.model.sgen.GeneratorModel;
 import org.yakindu.sct.model.sgraph.Statechart;
 
+import hu.bme.mit.inf.symod.scverif.processing.BuildError;
+import hu.bme.mit.inf.symod.scverif.processing.HomeworkResult;
 import hu.bme.mit.inf.symod.scverif.processing.sct.ForbiddenElement;
 import hu.bme.mit.inf.symod.scverif.processing.sct.MissingEObject;
 import hu.bme.mit.inf.symod.scverif.processing.sct.StatechartAnalyzer;
+import hu.bme.mit.inf.symod.scverif.processing.sct.YakinduSCTFileNotFoundException;
 import hu.bme.mit.inf.symod.scverif.processing.sgen.YakinduGeneratorExecutorModified;
-import hu.bme.mit.inf.symod.scverif.ui.BuildError;
-import hu.bme.mit.inf.symod.scverif.ui.HomeworkResult;
-import hu.bme.mit.inf.symod.scverif.ui.YakinduSCTFileNotFoundException;
-import hu.bme.mit.inf.symod.scverif.ui.YakinduSGenFileNotFoundException;
+import hu.bme.mit.inf.symod.scverif.processing.sgen.YakinduSGenFileNotFoundException;
 
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
@@ -1024,13 +1024,16 @@ public class DoStatechartVerification {
                         monitor.worked(1);
 
                     }
-                    logger.info("OK, everything went fine");
+                    
+                    String resultMessage = "OK, everything went fine";
+                    
+                    logger.info(resultMessage);
 
                     if (parentActiveShell != null) {
                         Display.getDefault().syncExec(new Runnable() {
                             public void run() {
                                 MessageDialog.openInformation(parentActiveShell, "Job done",
-                                        "OK, everything went fine");
+                                        resultMessage);
                             }
                         });
                     }

@@ -68,11 +68,15 @@ public class StatechartProcessingHandler extends AbstractHandler {
                     logger.info("============ OK, WAITING FOR AUTOBUILD DONE ==============");
                     Path summaryFilePath = doStatechartVerification.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
 
+                    String resultMessage = "OK, everything went fine for " + matchingProjectsInWorkspace.size() + " projects. "
+                            + "You can find the summary file at '"+summaryFilePath.toUri()+"'.";
+                    
+                    logger.info(resultMessage);
+                    
                     // Display.getDefault().syncExec(new Runnable() {
                     Display.getDefault().asyncExec(new Runnable() {
                         public void run() {
-                            MessageDialog.openInformation(shell, "Job done", "OK, everything went fine for " + matchingProjectsInWorkspace.size() + " projects. "
-                                    + "You can find the summary file at '"+summaryFilePath.toUri()+"'.");
+                            MessageDialog.openInformation(shell, "Job done", resultMessage);
                         }
                     });
                 } catch (final Exception e) {

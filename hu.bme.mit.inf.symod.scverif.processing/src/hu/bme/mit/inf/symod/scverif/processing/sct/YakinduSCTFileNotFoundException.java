@@ -1,4 +1,4 @@
-package hu.bme.mit.inf.symod.scverif.ui;
+package hu.bme.mit.inf.symod.scverif.processing.sct;
 
 import java.io.FileNotFoundException;
 

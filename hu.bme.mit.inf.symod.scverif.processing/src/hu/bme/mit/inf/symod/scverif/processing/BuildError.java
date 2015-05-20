@@ -1,4 +1,4 @@
-package hu.bme.mit.inf.symod.scverif.ui;
+package hu.bme.mit.inf.symod.scverif.processing;
 
 /**
  * Exception to throw when there was any kind of build error on a project  

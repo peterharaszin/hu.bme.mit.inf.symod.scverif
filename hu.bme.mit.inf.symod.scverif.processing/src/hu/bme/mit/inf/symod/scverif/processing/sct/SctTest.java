@@ -1,4 +1,4 @@
-package hu.bme.mit.inf.symod.scverif.ui.handlers.sct;
+package hu.bme.mit.inf.symod.scverif.processing.sct;
 
 import static org.junit.Assert.*;
 
@@ -8,8 +8,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 //import org.yakindu.sct.model.sgraph.Statechart;
-
-import hu.bme.mit.inf.symod.scverif.processing.sct.StatechartAnalyzer;
 
 public class SctTest {
 

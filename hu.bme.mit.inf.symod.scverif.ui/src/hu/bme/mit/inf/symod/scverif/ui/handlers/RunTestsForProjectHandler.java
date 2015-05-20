@@ -24,6 +24,8 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import hu.bme.mit.inf.symod.scverif.ui.jobs.DoStatechartVerification;
@@ -36,6 +38,22 @@ import hu.bme.mit.inf.symod.scverif.ui.jobs.DoStatechartVerification;
  */
 public class RunTestsForProjectHandler extends AbstractHandler {
 
+    /**
+     * Get active shell
+     * @see https://books.google.hu/books?id=Uo4SlCvSy40C&lpg=PA188&ots=Nm6Mysh_4b&hl=hu&pg=PA189#v=onepage&f=false
+     * 
+     * @return
+     */
+    @SuppressWarnings("unused")
+    private Shell getShell(){
+        IWorkbench workbench = org.eclipse.ui.PlatformUI.getWorkbench();
+        IWorkbenchWindow activeWorkbenchWindow = workbench.getActiveWorkbenchWindow();
+        if(activeWorkbenchWindow == null){
+            return null;
+        }
+        return activeWorkbenchWindow.getShell();
+    }
+    
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
         Logger logger = DoStatechartVerification.logger;

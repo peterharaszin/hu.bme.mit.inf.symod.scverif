@@ -37,6 +37,7 @@ import org.yakindu.sct.model.stext.stext.AlwaysEvent;
 import org.yakindu.sct.model.stext.stext.EventDefinition;
 import org.yakindu.sct.model.stext.stext.EventSpec;
 import org.yakindu.sct.model.stext.stext.InterfaceScope;
+import org.yakindu.sct.model.stext.stext.LocalReaction;
 import org.yakindu.sct.model.stext.stext.OperationDefinition;
 import org.yakindu.sct.model.stext.stext.ReactionTrigger;
 import org.yakindu.sct.model.stext.stext.RegularEventSpec;
@@ -154,20 +155,19 @@ public class StatechartAnalyzer {
         return modelElementsMap;
     }
 
+    /**
+     * Get all forbidden elements in the model
+     */
     public LinkedList<ForbiddenElement> getForbiddenElements() {
-        LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
-
-        // always/oncycle keywords are forbidden
-        ArrayList<ReactionTrigger> reactionTriggers = getReactionTriggers();
-        if (reactionTriggers != null) {
-            for (ReactionTrigger reactionTrigger : reactionTriggers) {
-                forbiddenElementList.addAll(getForbiddenElementsInReactionTrigger(reactionTrigger));
-            }
-        }
-
-        return forbiddenElementList;
+        return getForbiddenElements(modelElementsInAMap);
     }
 
+    /**
+     * Get forbidden elements in the statechart which has its elements loaded into a map
+     *  
+     * @param modelElementsInAMap
+     * @return
+     */
     public static LinkedList<ForbiddenElement> getForbiddenElements(
             HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap) {
         ArrayList<EObject> reactionTriggers = modelElementsInAMap.get(ReactionTrigger.class);
@@ -185,6 +185,12 @@ public class StatechartAnalyzer {
         return forbiddenElementList;
     }
 
+    /**
+     * Get forbidden elements in the statechart
+     * 
+     * @param statechart
+     * @return
+     */
     public static LinkedList<ForbiddenElement> getForbiddenElements(Statechart statechart) {
         HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap = collectModelElementsIntoMap(
                 statechart);
@@ -530,6 +536,7 @@ public class StatechartAnalyzer {
         EList<EventSpec> triggers = reactionTrigger.getTriggers();
 
         LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
+        String regExpForLineRemoval = "\\r\\n|\\r|\\n";
 
         // check if no trigger has been attached to the edge
         if (triggers == null || triggers.isEmpty()) {
@@ -541,30 +548,60 @@ public class StatechartAnalyzer {
                 Transition containerTransition = (Transition) reactionTrigger.eContainer();
                 Vertex sourceVertex = containerTransition.getSource();
 
-                // it's only forbidden if its parent is a State (there are cases where Pseudostates are allowed)
+                // it's only forbidden if its parent is a State
+                // (there are cases where Pseudostates are allowed, e.g when conditions or starting nodes are used)
                 if (sourceVertex instanceof State) {
                     String sourceVertexName = sourceVertex.getName();
-                    forbiddenElementList.add(new ForbiddenElement(
-                            "Trigger can not be empty! (source vertex name: " + sourceVertexName + ")"));
+                    String transitionSpecification = containerTransition.getSpecification();
+                    String transitionSpecificationLineBreaksRemoved = transitionSpecification.replaceAll(regExpForLineRemoval, " ");
+                    String errorMessage = "Trigger can not be empty! (source state name: " + sourceVertexName + ", transition's specification: '"+transitionSpecificationLineBreaksRemoved + "'";
+                    Vertex targetVertex = containerTransition.getTarget();
+                    if(targetVertex instanceof State) { // the target is a state too (not a pseudostate for example)
+                        errorMessage += ", target state's name: "+targetVertex.getName();
+                    }
+                    errorMessage += ")";
+                    
+                    forbiddenElementList.add(new ForbiddenElement(errorMessage));
                 }
             } else if (eContainer instanceof State) {// akkor egy csúcsban van benne a belső állapotátmenet (beleírta a dobozba)
-                Vertex sourceVertex = (Vertex) eContainer;
+                // checking if the student put the triggers into the state's box itself
+                // for example, he/she used "every 1 s / ..." in the state (besides/instead of using the 
+                // entry trigger and separate conditions)
+                State sourceVertex = (State) eContainer;
 
-                // it's only forbidden if its parent is a State (there are cases where Pseudostates are allowed)
-                if (sourceVertex instanceof State) {
-                    String sourceVertexName = sourceVertex.getName();
-                    forbiddenElementList.add(new ForbiddenElement(
-                            "Trigger can not be empty! (source vertex name: " + sourceVertexName + ")"));
-                }
-
+                String sourceVertexName = sourceVertex.getName();
+                String errorMessage = "Trigger can not be empty! (source state name: " + sourceVertexName + ")";
+                forbiddenElementList.add(new ForbiddenElement(errorMessage));
             }
         }
 
         for (EventSpec eventSpec : triggers) {
-            // Do not allow oncycle and always as event for reactions.
+            // Do not allow oncycle and always as events for reactions.
             if (eventSpec instanceof AlwaysEvent) {
-                forbiddenElementList.add(new ForbiddenElement(
-                        "The usage of always/oncycle keyword (or triggerless transitions) is forbidden!"));
+                String errorMessage = "The usage of always/oncycle keyword (or triggerless transitions) is forbidden!";
+                
+                // checking if the forbidden keywords are used in the state itself (written in the state's box)
+                // the hierarchy up to its parents in this case:
+                // EventSpec --> ReactionTrigger --> LocalReaction --> SimpleScope --> State                
+                EObject secondParentEContainer = eventSpec.eContainer().eContainer(); // EventSpec --> ReactionTrigger --> LocalReaction
+                if(secondParentEContainer instanceof LocalReaction) {
+                    EObject fourthParentEContainer = secondParentEContainer.eContainer().eContainer();
+                    if(fourthParentEContainer instanceof State) { // LocalReaction --> SimpleScope --> State
+                        errorMessage += " You put the forbidden triggers into the state itself (name: "+(((State) fourthParentEContainer).getName())+")!";
+                    }
+                }
+                // if it's a transition, get its specification
+                // EventSpec --> ReactionTrigger --> Transition
+                else if(secondParentEContainer instanceof Transition) {
+                    // EObject thirdParentEContainer = secondParentEContainer.eContainer(); // it may be a state
+                    String specification = ((Transition)secondParentEContainer).getSpecification();
+                    String specificationNewLinesReplaced = specification.replaceAll(regExpForLineRemoval, " ");
+                    
+                    // removing line breaks in the string
+                    errorMessage += " The transition's specification: '"+specificationNewLinesReplaced+"'.";
+                }
+                
+                forbiddenElementList.add(new ForbiddenElement(errorMessage));
             }
         }
 

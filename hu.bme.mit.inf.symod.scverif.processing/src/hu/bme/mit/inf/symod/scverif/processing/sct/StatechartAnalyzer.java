@@ -64,11 +64,11 @@ public class StatechartAnalyzer {
 
     public StatechartAnalyzer(Statechart statechart) {
         setStatechart(statechart);
-    }  
-    
+    }
+
     public static Statechart getStatechartFromUri(URI sctFileURI) {
-//        sctFileURI.
-        
+        //        sctFileURI.
+
         // Loads the resource
         ResourceSetImpl resourceSet = new ResourceSetImpl();
         Resource res = resourceSet.getResource(sctFileURI, true);
@@ -84,15 +84,15 @@ public class StatechartAnalyzer {
             // // ez nem fog kelleni...
             // }
         }
-        return null;        
+        return null;
     }
-    
+
     public static Statechart getStatechartFromPath(Path sctFilePath) {
         // now we need to create a file URI (not a platform resource URI)
         URI sctFileURI = URI.createFileURI(sctFilePath.toUri().getPath());
         return getStatechartFromUri(sctFileURI);
     }
-    
+
     public static Statechart getStatechartFromIFile(IFile sctFile) {
         URI sctFileURI = URI.createPlatformResourceURI(sctFile.getFullPath().toString(), false);
         return getStatechartFromUri(sctFileURI);
@@ -115,7 +115,8 @@ public class StatechartAnalyzer {
         return false;
     }
 
-    public static HashMap<Class<? extends EObject>, ArrayList<EObject>> collectModelElementsIntoMap(Statechart statechart) {
+    public static HashMap<Class<? extends EObject>, ArrayList<EObject>> collectModelElementsIntoMap(
+            Statechart statechart) {
         logger.info("collecting and inspecting model elements...\n\n");
 
         HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsMap = new HashMap<Class<? extends EObject>, ArrayList<EObject>>();
@@ -129,7 +130,8 @@ public class StatechartAnalyzer {
             // get which model object it represents (we would like to get the interface,
             // not the concrete implementation)
             @SuppressWarnings("unchecked")
-            Class<? extends EObject> implementedInterfaceClassObject = (Class<? extends EObject>) nextEObjectClass.getInterfaces()[0];
+            Class<? extends EObject> implementedInterfaceClassObject = (Class<? extends EObject>) nextEObjectClass
+                    .getInterfaces()[0];
             // ArrayList<EObject> elementList = modelElementsMap.get(nextEObjectClass);
             ArrayList<EObject> elementList = modelElementsMap.get(implementedInterfaceClassObject);
             if (elementList == null) {
@@ -154,7 +156,7 @@ public class StatechartAnalyzer {
 
     public LinkedList<ForbiddenElement> getForbiddenElements() {
         LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
-        
+
         // always/oncycle keywords are forbidden
         ArrayList<ReactionTrigger> reactionTriggers = getReactionTriggers();
         if (reactionTriggers != null) {
@@ -162,13 +164,14 @@ public class StatechartAnalyzer {
                 forbiddenElementList.addAll(getForbiddenElementsInReactionTrigger(reactionTrigger));
             }
         }
-        
+
         return forbiddenElementList;
     }
-    
-    public static LinkedList<ForbiddenElement> getForbiddenElements(HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap) {
+
+    public static LinkedList<ForbiddenElement> getForbiddenElements(
+            HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap) {
         ArrayList<EObject> reactionTriggers = modelElementsInAMap.get(ReactionTrigger.class);
-        
+
         LinkedList<ForbiddenElement> forbiddenElementList = new LinkedList<ForbiddenElement>();
 
         // always/oncycle keywords are forbidden
@@ -179,12 +182,13 @@ public class StatechartAnalyzer {
             }
         }
 
-        return forbiddenElementList;        
+        return forbiddenElementList;
     }
-    
+
     public static LinkedList<ForbiddenElement> getForbiddenElements(Statechart statechart) {
-        HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap = collectModelElementsIntoMap(statechart);
-        
+        HashMap<Class<? extends EObject>, ArrayList<EObject>> modelElementsInAMap = collectModelElementsIntoMap(
+                statechart);
+
         return getForbiddenElements(modelElementsInAMap);
     }
 
@@ -406,10 +410,23 @@ public class StatechartAnalyzer {
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
      * @return
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    // @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings("unchecked")
     public ArrayList<TimeEventSpec> getTimeEventSpecs() {
         // Doing it the dirty way...
-        return (ArrayList) modelElementsInAMap.get(TimeEventSpec.class);
+        return (ArrayList<TimeEventSpec>) getModelElement(TimeEventSpec.class);
+        //        return (ArrayList) modelElementsInAMap.get(TimeEventSpec.class);
+    }
+
+    /**
+     * Get the model element
+     * 
+     * @param clazz
+     * @return
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public ArrayList<? extends EObject> getModelElement(Class<? extends EObject> clazz) {
+        return (ArrayList) modelElementsInAMap.get(clazz);
     }
 
     /**
@@ -452,7 +469,7 @@ public class StatechartAnalyzer {
     }
 
     /**
-     * Get transitions in the model
+     * Get states in the model
      * 
      * @see org.yakindu.sct.model.sgraph.State
      * @see http://stackoverflow.com/questions/4581407/how-can-i-convert-arraylistobject-to-arrayliststring/23777137#23777137
@@ -639,7 +656,8 @@ public class StatechartAnalyzer {
     }
 
     private void processTrigger(Trigger trigger) {
-        LinkedList<ForbiddenElement> forbiddenElementList = getForbiddenElementsInReactionTrigger((ReactionTrigger) trigger);
+        LinkedList<ForbiddenElement> forbiddenElementList = getForbiddenElementsInReactionTrigger(
+                (ReactionTrigger) trigger);
 
         for (ForbiddenElement forbiddenElement : forbiddenElementList) {
             logger.info("forbidden element has been found: " + forbiddenElement.getMessage() + "\n");
@@ -764,13 +782,13 @@ public class StatechartAnalyzer {
     @SuppressWarnings("serial")
     public static ArrayList<MissingEObject> getMissingElementsInInterface(
             HashMap<Class<? extends EObject>, ArrayList<EObject>> referenceModelElementsInAMap,
-            HashMap<Class<? extends EObject>, ArrayList<EObject>> toBeCheckedModelElementsInAMap){
+            HashMap<Class<? extends EObject>, ArrayList<EObject>> toBeCheckedModelElementsInAMap) {
 
         ArrayList<MissingEObject> missingElements = new ArrayList<>();
-        
+
         // we would like to check the existence of the following NamedElements:
         // InterfaceScope, EventDefinition, OperationDefinition, VariableDefinition
-        
+
         // these have to get checked
         ArrayList<Class<? extends NamedElement>> classesOfEObjectsToCheck = new ArrayList<Class<? extends NamedElement>>() {
             {
@@ -789,12 +807,12 @@ public class StatechartAnalyzer {
                 put(OperationDefinition.class, "operation");
                 put(VariableDefinition.class, "variable");
             }
-        };    
-        
+        };
+
         modelElementUserFriendlyNameDictionary.forEach((k, v) -> {
             System.out.println();
         });
-        
+
         for (Class<? extends NamedElement> currentEObjectClass : classesOfEObjectsToCheck) {
             ArrayList<EObject> refInterfaceElements = referenceModelElementsInAMap.get(currentEObjectClass);
             ArrayList<EObject> toBeCheckedInterfaceElements = toBeCheckedModelElementsInAMap.get(currentEObjectClass);
@@ -804,7 +822,7 @@ public class StatechartAnalyzer {
                 boolean found = false;
                 for (EObject currentProvidedEObject : toBeCheckedInterfaceElements) {
                     if (currentRequiredEObjectName.equals(((NamedElement) currentProvidedEObject).getName())) {
-                        found = true; // OK, found the element we were looking for
+                        found = true;// OK, found the element we were looking for
                         break;
                     }
                 }
@@ -833,10 +851,10 @@ public class StatechartAnalyzer {
                 }
             }
         }
-        
+
         return missingElements;
     }
-    
+
     /**
      * Get missing elements in an interface compared to a reference interface.
      * (The order of the parameters matter. :) )

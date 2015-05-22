@@ -108,6 +108,10 @@ public class RunTestsForProjectHandler extends AbstractHandler {
                     // doStatechartVerification.requestAutoBuildAndWaitForIt();                    
                     Path summaryFilePath = doStatechartVerification.runTestsOnProjects(matchingProjects);
 
+                    String resultMessage = "OK, running tests went fine for " + matchingProjects.size() + " projects."
+                            + " You can find the summary file at '" + summaryFilePath.toUri() + "'.";
+
+                    logger.info(resultMessage);
 //                    Display.getDefault().asyncExec(new Runnable() {
 //                        public void run() {
 //                            MessageDialog.openInformation(shell, "Job done",
@@ -118,8 +122,7 @@ public class RunTestsForProjectHandler extends AbstractHandler {
                     // http://eclipsesource.com/blogs/2014/03/24/how-to-use-swt-with-java-8/
                     Display.getDefault().asyncExec(() -> {
                         MessageDialog.openInformation(shell, "Job done",
-                            "OK, running tests went fine for " + matchingProjects.size() + " projects."
-                                    + " You can find the summary file at '" + summaryFilePath.toUri() + "'.");
+                            resultMessage);
                         }
                 );
                     

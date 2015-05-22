@@ -1,6 +1,8 @@
 package hu.bme.mit.inf.symod.scverif.ui.handlers;
 
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 
@@ -41,38 +43,57 @@ public class StatechartProcessingHandler extends AbstractHandler {
     public Object execute(ExecutionEvent event) throws ExecutionException {
         final Shell shell = HandlerUtil.getActiveShell(event);
         Logger logger = DoStatechartVerification.logger;
-        
+
         // https://eclipse.org/articles/Article-Concurrency/jobs-api.html
         final Job processHomeworksJob = new Job("Processing homeworks...") {
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 // // Generate instances
                 // SubProgressMonitor subProgressMonitor = null;
-                
+                logger.info("StatechartProcessingHandler::execute(), at: '"
+                        + StatechartProcessingHandler.class.getProtectionDomain().getCodeSource().getLocation()
+                        + "'.");
+
                 try {
+                    Instant startTimeOfProcessingWithBuild = Instant.now();
+
                     DoStatechartVerification doStatechartVerification = new DoStatechartVerification();
-                    TreeMap<String, IProject> matchingProjectsInWorkspace = DoStatechartVerification.getMatchingProjectsInWorkspace();
-                    
+                    TreeMap<String, IProject> matchingProjectsInWorkspace = DoStatechartVerification
+                            .getMatchingProjectsInWorkspace();
+
                     // subProgressMonitor = new SubProgressMonitor(monitor, 1);
                     // setProperty(key, value);
 
-                    logger.info("StatechartProcessingHandler::execute(), at: '"
-                            + StatechartProcessingHandler.class.getProtectionDomain().getCodeSource().getLocation()
-                            + "'.");
-                    
-//                    doStatechartVerification.cleanAndFullBuildAllProjectsInWorkspace(null);
+                    Instant startTimeOfBuild = Instant.now();
+                    //                    doStatechartVerification.cleanAndFullBuildAllProjectsInWorkspace(null);
                     //                  doStatechartVerification.waitForBuildWithJobChangeAdapter();
                     // doStatechartVerification.waitForAutoAndManualBuild();
                     doStatechartVerification.requestAutoBuildAndWaitForIt();
-
+                    Instant endTimeOfBuild = Instant.now();
+                    
+                    long buildTimeInMilliSeconds = ChronoUnit.MILLIS.between(startTimeOfBuild, endTimeOfBuild);
+                    long buildTimeInNanoSeconds = ChronoUnit.NANOS.between(startTimeOfBuild, endTimeOfBuild);
                     logger.info("============ OK, WAITING FOR AUTOBUILD DONE ==============");
-                    Path summaryFilePath = doStatechartVerification.runTestsOnProjects(matchingProjectsInWorkspace, monitor);
+                    Path summaryFilePath = doStatechartVerification.runTestsOnProjects(matchingProjectsInWorkspace,
+                            monitor);
 
-                    String resultMessage = "OK, everything went fine for " + matchingProjectsInWorkspace.size() + " projects. "
-                            + "You can find the summary file at '"+summaryFilePath.toUri()+"'.";
-                    
+                    String resultMessage = "OK, everything went fine for " + matchingProjectsInWorkspace.size()
+                            + " projects. " + "You can find the summary file at '" + summaryFilePath.toUri() + "'.";
+
                     logger.info(resultMessage);
-                    
+
+                    Instant endTimeOfProcessingWithBuild = Instant.now();
+                    // Duration durationOfProcessing = Duration.between(startTimeOfProcessing, endTimeOfProcessing);
+                    long processingTimeInMilliSeconds = ChronoUnit.MILLIS.between(startTimeOfProcessingWithBuild,
+                            endTimeOfProcessingWithBuild);
+                    long processingTimeInNanoSeconds = ChronoUnit.NANOS.between(startTimeOfProcessingWithBuild,
+                            endTimeOfProcessingWithBuild);
+                    logger.info("Durations: duration of the build process took " + buildTimeInMilliSeconds
+                            + " milliseconds (" + buildTimeInNanoSeconds + " nanoseconds).");
+                    logger.info("Durations: duration of the whole testing process together with the build process took "
+                            + processingTimeInMilliSeconds + " milliseconds (" + processingTimeInNanoSeconds
+                            + " nanoseconds, " + (processingTimeInMilliSeconds / 1000) + " seconds).");
+
                     // Display.getDefault().syncExec(new Runnable() {
                     Display.getDefault().asyncExec(new Runnable() {
                         public void run() {
@@ -109,17 +130,16 @@ public class StatechartProcessingHandler extends AbstractHandler {
                     logger.info("Job called '" + processHomeworksJob.getName() + "' completed successfully");
                 } else {
                     logger.severe(
-//                    logger.error(
-                            "Job called '" + processHomeworksJob.getName()
-                            + "' did not complete successfully");
+                            //                    logger.error(
+                            "Job called '" + processHomeworksJob.getName() + "' did not complete successfully");
                 }
 
-                processHomeworksJob.removeJobChangeListener(this); // is it really needed?
+                processHomeworksJob.removeJobChangeListener(this);// is it really needed?
             }
         });
         processHomeworksJob.schedule();
 
-        return null; // return the result of the execution - reserved for future use, must be null!!
+        return null;// return the result of the execution - reserved for future use, must be null!!
     }
 
     /**

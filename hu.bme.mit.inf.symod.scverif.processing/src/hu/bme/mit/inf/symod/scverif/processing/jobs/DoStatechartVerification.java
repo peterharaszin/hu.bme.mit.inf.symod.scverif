@@ -110,7 +110,7 @@ public class DoStatechartVerification {
     private static final String testCompiledClassFileFullPathInIProject = testCompiledClassFolderPathInIProject
             + testClassName + ".class";
 
-//    private Shell parentActiveShell;
+    //    private Shell parentActiveShell;
     private IWorkspaceRoot workspaceRoot;
     private IWorkspace workspace;
 
@@ -413,15 +413,22 @@ public class DoStatechartVerification {
         boolean sctFileExistsInRootDirectory = false;
         // has an exception been thrown and caught?
         Exception exceptionThrown = null;
+        String currentIProjectName = null;
 
         try {
+            if (currentIProject == null) {
+                throw new Exception("Failure: the IProject was null!");
+            }
+
+            currentIProjectName = currentIProject.getName();
+
             NullProgressMonitor nullProgressMonitor = new NullProgressMonitor();
 
-            logger.info("Neptun: " + neptunCode + "; project name: " + currentIProject.getName() + ", location URI: "
-            // + currentIProject.getRawLocationURI()
+            logger.info("Neptun: " + neptunCode + "; project name: " + currentIProjectName + ", location URI: "
                     + currentIProject.getLocationURI());
 
-            String sctFileNameInRootDirectory = neptunCode + "." + SCT_FILE_EXTENSION;// e.g. "A3BC1G.sct"
+            // SCT file's name: <NEPTUN-CODE>.sct, e.g. "A3BC1G.sct"
+            String sctFileNameInRootDirectory = neptunCode + "." + SCT_FILE_EXTENSION;
 
             checkExistenceOfSGenFileInIProject(currentIProject);
 
@@ -429,10 +436,8 @@ public class DoStatechartVerification {
                     sctFileNameInRootDirectory);
 
             if (sctFileExistsInRootDirectory) {
-                // checkExistenceOfSCTFileInRootDirectory(projectsRootDirectoryPath, sctFileNameInRootDirectory);
-
                 currentIProject.open(nullProgressMonitor);
-                // refreshing in case e.g. an sgen file has been added since the last
+                // refreshing in case new files have been added since the last
                 // build (so this way the new files get "recorded" in the workspace)
                 currentIProject.refreshLocal(IResource.DEPTH_INFINITE, nullProgressMonitor);
 
@@ -462,9 +467,17 @@ public class DoStatechartVerification {
         } catch (final Exception e) {
             exceptionThrown = e;
 
-            logger.severe("Problems occurred while trying to process the project called '" + currentIProject.getName()
-            // + "' at '" + currentIProject.getRawLocationURI() + "'. Message: " + e.getMessage());
-                    + "' at '" + currentIProject.getLocationURI() + "'. Message: " + e.getMessage());
+            String excMessage = "Problems occurred while trying to process the project";
+
+            if (currentIProject == null) {
+                excMessage += ": the IProject was null!";
+            } else {
+                excMessage += " called '" + currentIProjectName
+                // + "' at '" + currentIProject.getRawLocationURI() + "'. Message: " + e.getMessage());
+                        + "' at '" + currentIProject.getLocationURI() + "'. Message: " + e.getMessage();
+            }
+
+            logger.severe(excMessage);
         }
 
         HomeworkResult homeworkResult = new HomeworkResult(neptunCode, sctFileExistsInRootDirectory,
@@ -651,6 +664,7 @@ public class DoStatechartVerification {
                 .collectModelElementsIntoMap(referenceStatechartFromRoot);
 
         int numberOfProjects = iProjectsEntrySet.size();
+        int numberOfProcessedProjects = 0;
         int numberOfSuccessfulProjects = 0;
 
         // time measurements
@@ -658,6 +672,10 @@ public class DoStatechartVerification {
         long maxTimeOfProjectProcessingWithCsvWritingInNanoseconds = 0;
         long minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds = Long.MAX_VALUE;
         long maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds = 0;
+        long allProcessingTimeWithoutCsvWritingInNanoseconds = 0;
+        long allProcessingTimeWithCsvWritingInNanoseconds = 0;
+        long averageProcessingTimeWithoutCsvWritingInNanoseconds = 0;
+        long averageProcessingTimeWithCsvWritingInNanoseconds = 0;
 
         try (BufferedWriter csvWriter = Files.newBufferedWriter(CSV_targetFilePath, charset)) {
             monitor.beginTask("Starting to process projects...", iProjectsEntrySet.size());
@@ -691,17 +709,18 @@ public class DoStatechartVerification {
 
                     String neptunCode = currentEntry.getKey();
                     IProject currentIProject = currentEntry.getValue();
+                    String currentIProjectName = currentIProject.getName();
 
                     // see if cancellation has been requested
                     if (monitor.isCanceled()) {
                         throw new OperationCanceledException(
                                 "Operation has been cancelled before processing the project called '"
-                                        + currentIProject.getName() + "'.");
+                                        + currentIProjectName + "'.");
                         // return Status.CANCEL_STATUS;
                     }
                     //                monitor.subTask("Clean+build...");               
 
-                    monitor.setTaskName("Processing the project called '" + currentIProject.getName() + "'...");
+                    monitor.setTaskName("Processing the project called '" + currentIProjectName + "'...");
 
                     boolean wasSuccessful = false;
                     // the number of tests that failed during the run
@@ -728,9 +747,10 @@ public class DoStatechartVerification {
                         maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds = durationOfProjectProcessingWithoutCsvWritingInNanoseconds;
                     }
 
-                    System.out.println("Duration of processing the project called '" + currentIProject.getName()
+                    System.out.println("Durations: duration of processing the project called '" + currentIProjectName
                             + " without the CSV writing process took "
-                            + durationOfProjectProcessingWithoutCsvWritingInMilliseconds + " milliseconds ("+durationOfProjectProcessingWithoutCsvWritingInNanoseconds+" nanoseconds).");
+                            + durationOfProjectProcessingWithoutCsvWritingInMilliseconds + " milliseconds ("
+                            + durationOfProjectProcessingWithoutCsvWritingInNanoseconds + " nanoseconds).");
 
                     monitor.worked(1);
 
@@ -851,9 +871,23 @@ public class DoStatechartVerification {
                         maxTimeOfProjectProcessingWithCsvWritingInNanoseconds = durationOfProjectProcessingWithCsvWritingInNanoseconds;
                     }
 
-                    logger.info("Duration of project processing with the CSV writing process took "
+                    allProcessingTimeWithCsvWritingInNanoseconds += durationOfProjectProcessingWithCsvWritingInNanoseconds;
+                    allProcessingTimeWithoutCsvWritingInNanoseconds += durationOfProjectProcessingWithoutCsvWritingInNanoseconds;
+                    numberOfProcessedProjects++;
+                    averageProcessingTimeWithCsvWritingInNanoseconds = allProcessingTimeWithCsvWritingInNanoseconds
+                            / numberOfProcessedProjects;
+                    averageProcessingTimeWithoutCsvWritingInNanoseconds = allProcessingTimeWithoutCsvWritingInNanoseconds
+                            / numberOfProcessedProjects;
+
+                    logger.info("Durations: duration of project processing with the CSV writing process took "
                             + durationOfProjectProcessingWithCsvWritingInMilliseconds + " milliseconds ("
                             + durationOfProjectProcessingWithCsvWritingInNanoseconds + " nanoseconds).");
+                    logger.info("Durations: current average processing time with the CSV writing process took "
+                            + averageProcessingTimeWithCsvWritingInNanoseconds / 1000000 + " milliseconds ("
+                            + averageProcessingTimeWithCsvWritingInNanoseconds + " nanoseconds).");
+                    logger.info("Durations: current average processing time without the CSV writing process took "
+                            + averageProcessingTimeWithoutCsvWritingInNanoseconds / 1000000 + " milliseconds ("
+                            + averageProcessingTimeWithoutCsvWritingInNanoseconds + " nanoseconds).");
 
                 }
 
@@ -875,15 +909,25 @@ public class DoStatechartVerification {
         long processingTimeInMilliSeconds = ChronoUnit.MILLIS.between(startTimeOfProcessing, endTimeOfProcessing);
         long processingTimeInNanoSeconds = ChronoUnit.NANOS.between(startTimeOfProcessing, endTimeOfProcessing);
         logger.info("Durations: maximum duration of testing a project without the CSV writing process took "
-                +maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds/1000000+" milliseconds ("+ maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds + " nanoseconds).");
+                + maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds / 1000000 + " milliseconds ("
+                + maxTimeOfProjectProcessingWithoutCsvWritingInNanoseconds + " nanoseconds).");
         logger.info("Durations: maximum duration of testing a project with the CSV writing process took "
-                +maxTimeOfProjectProcessingWithCsvWritingInNanoseconds/1000000 + " milliseconds ("+ maxTimeOfProjectProcessingWithCsvWritingInNanoseconds + " nanoseconds.");
+                + maxTimeOfProjectProcessingWithCsvWritingInNanoseconds / 1000000 + " milliseconds ("
+                + maxTimeOfProjectProcessingWithCsvWritingInNanoseconds + " nanoseconds.");
         logger.info("Durations: minimum duration of testing a project without the CSV writing process took "
-                +minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds/1000000+" milliseconds ("+ minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds + " nanoseconds).");
+                + minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds / 1000000 + " milliseconds ("
+                + minTimeOfProjectProcessingWithoutCsvWritingInNanoseconds + " nanoseconds).");
         logger.info("Durations: minimum duration of testing a project with the CSV writing process took "
-                + minTimeOfProjectProcessingWithCsvWritingInNanoseconds/1000000 + " milliseconds ("+ minTimeOfProjectProcessingWithCsvWritingInNanoseconds + " nanoseconds).");
+                + minTimeOfProjectProcessingWithCsvWritingInNanoseconds / 1000000 + " milliseconds ("
+                + minTimeOfProjectProcessingWithCsvWritingInNanoseconds + " nanoseconds).");
+        logger.info("Durations: average processing time with the CSV writing process took "
+                + averageProcessingTimeWithCsvWritingInNanoseconds / 1000000 + " milliseconds ("
+                + averageProcessingTimeWithCsvWritingInNanoseconds + " nanoseconds).");
+        logger.info("Durations: average processing time without the CSV writing process took "
+                + averageProcessingTimeWithoutCsvWritingInNanoseconds / 1000000 + " milliseconds ("
+                + averageProcessingTimeWithoutCsvWritingInNanoseconds + " nanoseconds).");
         logger.info("Durations: duration of the whole testing process took " + processingTimeInMilliSeconds
-                + " milliseconds ("+processingTimeInNanoSeconds+" nanoseconds).");
+                + " milliseconds (" + processingTimeInNanoSeconds + " nanoseconds).");
         logger.info("Results: " + numberOfSuccessfulProjects + " projects were successful out of " + numberOfProjects);
         logger.info("(System Modeling) End of processing.");
 
@@ -1020,31 +1064,31 @@ public class DoStatechartVerification {
                         monitor.worked(1);
 
                     }
-                    
+
                     String resultMessage = "OK, everything went fine";
-                    
+
                     logger.info(resultMessage);
 
-//                    if (parentActiveShell != null) {
-//                        Display.getDefault().syncExec(new Runnable() {
-//                            public void run() {
-//                                MessageDialog.openInformation(parentActiveShell, "Job done",
-//                                        resultMessage);
-//                            }
-//                        });
-//                    }
+                    //                    if (parentActiveShell != null) {
+                    //                        Display.getDefault().syncExec(new Runnable() {
+                    //                            public void run() {
+                    //                                MessageDialog.openInformation(parentActiveShell, "Job done",
+                    //                                        resultMessage);
+                    //                            }
+                    //                        });
+                    //                    }
                 } catch (final Exception e) {
                     String resultMessage = e.getMessage();
-                    
+
                     e.printStackTrace();
-//                    if (parentActiveShell != null) {
-//                        Display.getDefault().syncExec(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                MessageDialog.openError(parentActiveShell, "Job finished with errors", resultMessage);
-//                            }
-//                        });
-//                    }
+                    //                    if (parentActiveShell != null) {
+                    //                        Display.getDefault().syncExec(new Runnable() {
+                    //                            @Override
+                    //                            public void run() {
+                    //                                MessageDialog.openError(parentActiveShell, "Job finished with errors", resultMessage);
+                    //                            }
+                    //                        });
+                    //                    }
                 } finally {
                     monitor.done();
                     logger.info("End of statechart analyzation.");
@@ -1498,11 +1542,11 @@ public class DoStatechartVerification {
      * 
      * @throws CoreException
      */
-    public void requestAutoBuildAndWaitForIt() throws CoreException {        
+    public void requestAutoBuildAndWaitForIt() throws CoreException {
         NullProgressMonitor progressMonitor = new NullProgressMonitor();
         requestAutoBuildAndWaitForIt(progressMonitor);
     }
-    
+
     /**
      * Request an automatic build and wait for its completion
      * 
@@ -1521,9 +1565,9 @@ public class DoStatechartVerification {
      */
     public void waitForAutoAndManualBuild() {
         NullProgressMonitor nullProgressMonitor = new NullProgressMonitor();
-        waitForAutoAndManualBuild(nullProgressMonitor, nullProgressMonitor);        
+        waitForAutoAndManualBuild(nullProgressMonitor, nullProgressMonitor);
     }
-    
+
     /**
      * Wait synchronously for automatic and manual build requests 
      * 
@@ -1552,7 +1596,7 @@ public class DoStatechartVerification {
 
         logger.info("Waiting for autobuild (waitForAutoBuild()) DONE...");
     }
-    
+
     /**
      * "The user may decide to wait while the reservation is being made or decide to run it in the background. When the job completes the reservation, it checks to see what the user chose to do. [... ] This method checks the IProgressConstants.PROPERTY_IN_DIALOG to see if the job is being run in a dialog. Basically, if the property exists and is the Boolean value true, then the user decided to wait for the results. The results can be shown immediately to the user (by invoking showResults)."
      * 
@@ -1560,63 +1604,62 @@ public class DoStatechartVerification {
      * @param job
      * @return
      */
-//    public boolean isModal(Job job) {
-//        Boolean isModal = (Boolean) job.getProperty(IProgressConstants.PROPERTY_IN_DIALOG);
-//        if (isModal == null)
-//            return false;
-//        return isModal.booleanValue();
-//    }
-       
+    //    public boolean isModal(Job job) {
+    //        Boolean isModal = (Boolean) job.getProperty(IProgressConstants.PROPERTY_IN_DIALOG);
+    //        if (isModal == null)
+    //            return false;
+    //        return isModal.booleanValue();
+    //    }
 
     /**
      * http://eclipse.1072660.n5.nabble.com/Wait-for-build-to-complete-and-check-if-errors-td57716.html#a57717
      * 
      * @return
      */
-//    public static boolean buildAndWaitForEnd() {
-//        boolean temp = true;
-//
-//        IWorkbench workbench = PlatformUI.getWorkbench();
-//        IProgressService progressService = workbench.getProgressService();
-//        final IRunnableWithProgress runnable = new IRunnableWithProgress() {
-//            public void run(IProgressMonitor monitor) throws InvocationTargetException {
-//                logger.info("===== Starting build process and waiting for the end =====");
-//
-//                IJobManager jobManager = Job.getJobManager();
-//                // IWorkbench workbench = PlatformUI.getWorkbench();
-//                try {
-//                    ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD, monitor);
-//                } catch (CoreException e) {
-//                    throw new InvocationTargetException(e);
-//                }
-//                if (!monitor.isCanceled()) {
-//                    try {
-//
-//                        jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
-//
-//                        jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
-//                    } catch (InterruptedException e) {
-//                        // continue
-//
-//                        if (temp)
-//                            logger.info("BUILD PROCESS - InterruptedException: " + e.toString());
-//                    }
-//                }
-//            }
-//        };
-//
-//        try {
-//            progressService.busyCursorWhile(runnable);
-//            return true;
-//        } catch (InvocationTargetException | InterruptedException e) {
-//            e.printStackTrace();
-//
-//            if (temp)
-//                logger.info("BUILD PROCESS - InterruptedException (progressService.busyCursorWhile): " + e.toString());
-//        }
-//
-//        return false;
-//    }
+    //    public static boolean buildAndWaitForEnd() {
+    //        boolean temp = true;
+    //
+    //        IWorkbench workbench = PlatformUI.getWorkbench();
+    //        IProgressService progressService = workbench.getProgressService();
+    //        final IRunnableWithProgress runnable = new IRunnableWithProgress() {
+    //            public void run(IProgressMonitor monitor) throws InvocationTargetException {
+    //                logger.info("===== Starting build process and waiting for the end =====");
+    //
+    //                IJobManager jobManager = Job.getJobManager();
+    //                // IWorkbench workbench = PlatformUI.getWorkbench();
+    //                try {
+    //                    ResourcesPlugin.getWorkspace().build(IncrementalProjectBuilder.FULL_BUILD, monitor);
+    //                } catch (CoreException e) {
+    //                    throw new InvocationTargetException(e);
+    //                }
+    //                if (!monitor.isCanceled()) {
+    //                    try {
+    //
+    //                        jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
+    //
+    //                        jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
+    //                    } catch (InterruptedException e) {
+    //                        // continue
+    //
+    //                        if (temp)
+    //                            logger.info("BUILD PROCESS - InterruptedException: " + e.toString());
+    //                    }
+    //                }
+    //            }
+    //        };
+    //
+    //        try {
+    //            progressService.busyCursorWhile(runnable);
+    //            return true;
+    //        } catch (InvocationTargetException | InterruptedException e) {
+    //            e.printStackTrace();
+    //
+    //            if (temp)
+    //                logger.info("BUILD PROCESS - InterruptedException (progressService.busyCursorWhile): " + e.toString());
+    //        }
+    //
+    //        return false;
+    //    }
 
     /**
      * Generate statechart implementation code from an *.sgen file (code

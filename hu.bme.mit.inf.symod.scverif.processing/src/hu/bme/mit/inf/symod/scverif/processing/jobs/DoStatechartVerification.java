@@ -623,6 +623,20 @@ public class DoStatechartVerification {
         return runTestsOnProjects(remoIProjects, new NullProgressMonitor());
     }
 
+    public String replaceCsvSeparatorAndLineBreaks(String originalText) {
+        String defaultReplacerCharacter = " | ";
+        return replaceCsvSeparatorAndLineBreaks(originalText, defaultReplacerCharacter);
+    }
+    
+    public String replaceCsvSeparatorAndLineBreaks(String originalText, String separatorReplacerCharacter) {
+        String regExpForLineRemoval = "\\r\\n|\\r|\\n";
+        
+        return originalText.replace(CSV_COMMA_DELIMITER, separatorReplacerCharacter)
+//                .replace(NEW_LINE, replacerCharacter).replace("\\r", replacerCharacter)
+                .replaceAll(regExpForLineRemoval, " == ")
+                ;
+    }    
+    
     /**
      * Run all the tests on the projects passed as a parameter (the key in the TreeMap is the student's Neptun-code)
      * 
@@ -754,7 +768,7 @@ public class DoStatechartVerification {
 
                     monitor.worked(1);
 
-                    logger.info("End of statechart analyzation.");
+                    logger.info("End of statechart analyzation ('"+currentIProjectName+"').");
                     String dateFormatColumn = csvSimpleDateFormatForColumn.format(new Date());
 
                     String exceptionText = "";
@@ -772,8 +786,7 @@ public class DoStatechartVerification {
                             exceptionThrown.printStackTrace();
                         }
 
-                        exceptionText += exceptionThrown.getMessage().replace(CSV_COMMA_DELIMITER, " == ")
-                                .replace(NEW_LINE, " == ").replace("\\r", " == ");
+                        exceptionText += exceptionThrown.getMessage();
                     }
 
                     String testFailureText = "-";
@@ -788,7 +801,7 @@ public class DoStatechartVerification {
                             testFailureMessages += failure.getMessage();
                         }
                         testFailureText = (testFailureMessages.length() > 0
-                                ? testFailureMessages.replace(NEW_LINE, " == ").replace("\\r", " == ") : "-");
+                                ? testFailureMessages : "-");
 
                         // true if all tests succeeded
                         wasSuccessful = testStatechartResult.wasSuccessful();
@@ -841,17 +854,17 @@ public class DoStatechartVerification {
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append(uploadedSctFileMessage);
                     csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append(forbiddenElementsText);
+                    csvWriter.append(replaceCsvSeparatorAndLineBreaks(forbiddenElementsText));
                     csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append(missingElementsInInterfaceText);
+                    csvWriter.append(replaceCsvSeparatorAndLineBreaks(missingElementsInInterfaceText));
                     csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append(testFailureText);
+                    csvWriter.append(replaceCsvSeparatorAndLineBreaks(testFailureText));
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append("" + failureCount);
                     csvWriter.append(CSV_COMMA_DELIMITER);
                     csvWriter.append("" + runCount);
                     csvWriter.append(CSV_COMMA_DELIMITER);
-                    csvWriter.append(exceptionText);
+                    csvWriter.append(replaceCsvSeparatorAndLineBreaks(exceptionText));
                     csvWriter.append(CSV_COMMA_DELIMITER);
 
                     // and finally, add a new line
@@ -1792,7 +1805,7 @@ public class DoStatechartVerification {
         // String binDirectory = binFolder.getRawLocationURI().getPath();
         String binDirectory = binFolder.getLocationURI().getPath();
 
-        // bin-könyvtár elérési útja
+        // bin-könyvtár elérési útja - ezért kell a trükközés: URLClassLoader: "Any URL that ends with a '/' is assumed to refer to a directory." (a binFolder.getLocationURI().toURL() nem perjellel érne véget)
         File binDirectoryAsFile = new File(binDirectory);
         boolean binDirectoryExists = binDirectoryAsFile.exists();
         logger.info("binDirectoryAsFile.exists(): " + binDirectoryExists);

@@ -565,8 +565,6 @@ public class StatechartAnalyzer {
                 }
             } else if (eContainer instanceof State) {// akkor egy csúcsban van benne a belső állapotátmenet (beleírta a dobozba)
                 // checking if the student put the triggers into the state's box itself
-                // for example, he/she used "every 1 s / ..." in the state (besides/instead of using the 
-                // entry trigger and separate conditions)
                 State sourceVertex = (State) eContainer;
 
                 String sourceVertexName = sourceVertex.getName();
@@ -812,6 +810,8 @@ public class StatechartAnalyzer {
      * Get missing elements in an interface compared to a reference interface.
      * (The order of the parameters matter. :) )
      * 
+     * We don't want to check InternalScope ("internal" interface), only the public InterfaceScope.
+     * 
      * @param referenceModelElementsInAMap
      * @param toBeCheckedModelElementsInAMap
      * @return
@@ -846,9 +846,9 @@ public class StatechartAnalyzer {
             }
         };
 
-        modelElementUserFriendlyNameDictionary.forEach((k, v) -> {
-            System.out.println();
-        });
+//        modelElementUserFriendlyNameDictionary.forEach((key, value) -> {
+//            System.out.println("model element to check: "+value);
+//        });
 
         for (Class<? extends NamedElement> currentEObjectClass : classesOfEObjectsToCheck) {
             ArrayList<EObject> refInterfaceElements = referenceModelElementsInAMap.get(currentEObjectClass);
@@ -859,7 +859,24 @@ public class StatechartAnalyzer {
                 boolean found = false;
                 for (EObject currentProvidedEObject : toBeCheckedInterfaceElements) {
                     if (currentRequiredEObjectName.equals(((NamedElement) currentProvidedEObject).getName())) {
-                        found = true;// OK, found the element we were looking for
+                        boolean isInterface = currentEObjectClass.equals(InterfaceScope.class);
+                        if(!isInterface) {
+                            // we also have to check if the element belongs to the same interface!!!
+                            EObject currentProvidedEObjectContainer = currentProvidedEObject.eContainer();
+                            EObject currentRequiredEObjectContainer = currentRequiredEObject.eContainer();
+                            if(currentProvidedEObjectContainer instanceof NamedElement && currentRequiredEObjectContainer instanceof NamedElement) {
+                                boolean bothHaveTheSameParent = ((NamedElement)currentProvidedEObjectContainer).getName().equals(((NamedElement) currentRequiredEObjectContainer).getName());
+                                if(bothHaveTheSameParent) {
+                                    found = true;// OK, found the element we were looking for
+                                }
+                            } else {
+                                // TODO: what if it's not a NamedElement? (e.g. if adding other elements besides interfaces, events, operations and variables)
+                                found = true;
+                            }
+                        } else {
+                            found = true;// OK, found the element we were looking for                            
+                        }
+                        
                         break;
                     }
                 }
